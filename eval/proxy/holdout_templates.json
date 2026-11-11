@@ -1,0 +1,538 @@
+{
+  "names": {
+    "share_savings": "Share Savings",
+    "bright_savings": "Bright Savings",
+    "high_yield_savings": "High-Yield Savings",
+    "holiday_club_savings": "Holiday Club Savings",
+    "you_name_it_savings": "You Name It Savings",
+    "launchpad_savings": "Launchpad Savings",
+    "hsa": "Health Savings Account",
+    "ira_variable": "Variable IRA",
+    "first_rate_checking": "1st Rate Checking",
+    "free_checking": "Free Checking",
+    "money_market_investors_choice": "Investor's Choice Money Market",
+    "achieve_money_market": "Achieve Money Market",
+    "cert_special": "{term} {jumbo} Certificate Special",
+    "cert_regular": "{term} {jumbo} Regular Certificates",
+    "ira_cert": "{term} {jumbo} {special} IRA Certificate",
+    "auto_loan": "{model_year} {term} Auto Loan",
+    "atv_loan": "{model_year} {term} ATV, Snowmobile & Jet Ski Loans",
+    "boat_rv_loan": "{model_year} {term} Boat & RV Loans",
+    "personal_loan": "{model_year} {term} Personal Loan",
+    "home_improvement_loan": "{model_year} {term} Home Improvement Loan",
+    "student_loans": "Student Loans",
+    "mortgage_purchase": "{term} Home Loans - Purchase{loan_amount}",
+    "mortgage_refi": "{term} Home Loans - Refinance{loan_amount}",
+    "cash_out_refi": "{term} Home Equity Refinance{loan_amount}",
+    "mortgage_rate_relief": "{term} Mortgage Rate Relief Program{loan_amount}",
+    "construction_loan": "Construction Loan",
+    "home_start": "Home$tart",
+    "heloc": "{intro} Home Equity Line of Credit",
+    "home_equity": "{term} Home Equity Loan",
+    "platinum_visa": "{intro} Platinum Visa",
+    "rewards_visa": "Rewards Visa",
+    "business_platinum_visa": "Business Platinum Visa",
+    "business_rewards_visa": "Business Rewards Visa",
+    "business_checking": "Business 1st Rate Checking",
+    "business_savings": "Business Share Savings",
+    "business_high_yield_savings": "High-Yield Savings (Business)",
+    "business_money_market": "Investor's Choice Money Market (Business)",
+    "business_you_name_it_savings": "You Name It Savings (Business)",
+    "business_cert_special": "{term} {jumbo} Special Business Certificates",
+    "business_cert_regular": "{term} {jumbo} Regular Business Certificates",
+    "routing_number": "Routing Number",
+    "branch": "Branch",
+    "branch_count": "Branch Count",
+    "membership": "Membership",
+    "mobile_wallet": "Mobile Wallet"
+  },
+  "attributes": {
+    "apy": "annual percentage yield",
+    "dividend_rate": "dividend rate",
+    "apr": "annual percentage rate",
+    "rate": "interest rate",
+    "points": "discount points",
+    "min_to_open": "minimum opening deposit",
+    "min_to_earn": "minimum balance required to earn dividends",
+    "term_months": "repayment length in months",
+    "count": "branch count",
+    "routing_number": "routing number",
+    "phone": "phone number",
+    "lobby_hours": "lobby hours",
+    "driveup_hours": "drive-up hours",
+    "status": "open or closed status",
+    "closure_date": "closure date"
+  },
+  "families": {
+    "rate_current": {
+      "kind": "current",
+      "category": "current_value",
+      "intent": "value",
+      "templates": [
+        {
+          "id": "h-current-1",
+          "text": "Please give me the latest published {attr} for {name}."
+        },
+        {
+          "id": "h-current-2",
+          "text": "For {name}, which {attr} should I use in a comparison today?"
+        },
+        {
+          "id": "h-current-3",
+          "text": "I am checking the terms on {name}; tell me its current {attr}."
+        }
+      ],
+      "trap_category": "stale_trap",
+      "forbid": [
+        "balance_min",
+        "balance_max"
+      ]
+    },
+    "rate_as_of": {
+      "kind": "as_of",
+      "category": "temporal_as_of",
+      "intent": "value",
+      "templates": [
+        {
+          "id": "h-asof-1",
+          "text": "Looking back to {date}, which {attr} applied to {name}?"
+        },
+        {
+          "id": "h-asof-2",
+          "text": "Please use the information in effect on {date} to identify the {attr} for {name}."
+        },
+        {
+          "id": "h-asof-3",
+          "text": "I need the {attr} on {name} as it stood on {date}."
+        }
+      ],
+      "forbid": [
+        "balance_min",
+        "balance_max"
+      ]
+    },
+    "rate_change": {
+      "kind": "change",
+      "category": "change_between_snapshots",
+      "intent": "change",
+      "templates": [
+        {
+          "id": "h-change-1",
+          "text": "Compare the {attr} for {name} on {date_from} with the figure on {date_to}."
+        },
+        {
+          "id": "h-change-2",
+          "text": "For {name}, describe how its {attr} moved between {date_from} and {date_to}."
+        },
+        {
+          "id": "h-change-3",
+          "text": "Which {attr} did {name} have at {date_from}, and what was it by {date_to}?"
+        }
+      ],
+      "forbid": [
+        "balance_min",
+        "balance_max"
+      ]
+    },
+    "tier_amount": {
+      "kind": "tier_amount",
+      "category": "tier_disambiguation",
+      "intent": "value",
+      "templates": [
+        {
+          "id": "h-amount-1",
+          "text": "With an amount of {amount} in {name}, which {attr} would apply?"
+        },
+        {
+          "id": "h-amount-2",
+          "text": "Please identify the {attr} for {name} using {amount} as the amount."
+        },
+        {
+          "id": "h-amount-3",
+          "text": "I am comparing {name} for an amount of {amount}; tell me the corresponding {attr}."
+        }
+      ],
+      "require_any": [
+        "balance_min",
+        "balance_max",
+        "loan_amount_max"
+      ]
+    },
+    "refuse_unpublished": {
+      "kind": "unpublished",
+      "category": "should_refuse",
+      "intent": "value",
+      "templates": [
+        {
+          "id": "h-unpublished-1",
+          "text": "Can you find a published {attr} for {name}?"
+        },
+        {
+          "id": "h-unpublished-2",
+          "text": "I need an official figure for the {attr} of {name}; is one listed?"
+        },
+        {
+          "id": "h-unpublished-3",
+          "text": "Please look up {name} and tell me whether its {attr} has been published."
+        }
+      ]
+    },
+    "hours_branch": {
+      "kind": "dated_branch",
+      "category": "branch_info",
+      "intent": "hours",
+      "pairs": [
+        [
+          "branch",
+          "lobby_hours"
+        ],
+        [
+          "branch",
+          "driveup_hours"
+        ]
+      ],
+      "templates": [
+        {
+          "id": "h-hours-weekly-list",
+          "text": "List the weekly {attr} for Dupaco's {branch} branch.",
+          "attr_words": {
+            "lobby_hours": "lobby hours",
+            "driveup_hours": "drive-up hours"
+          }
+        },
+        {
+          "id": "h-hours-weekly-throughout",
+          "text": "What are the {attr} throughout the week at the {branch} branch?",
+          "attr_words": {
+            "lobby_hours": "lobby hours",
+            "driveup_hours": "drive-up hours"
+          }
+        },
+        {
+          "id": "h-hours-weekly-schedule",
+          "text": "Show the regular weekly schedule of {attr} for the {branch} branch.",
+          "attr_words": {
+            "lobby_hours": "lobby hours",
+            "driveup_hours": "drive-up hours"
+          }
+        }
+      ]
+    },
+    "hours_day": {
+      "kind": "dated",
+      "category": "branch_info",
+      "intent": "hours",
+      "pairs": [
+        [
+          "branch",
+          "lobby_hours"
+        ],
+        [
+          "branch",
+          "driveup_hours"
+        ]
+      ],
+      "templates": [
+        {
+          "id": "h-hours-day-inquiry",
+          "text": "For {day}, what are the {attr} at Dupaco's {branch} branch?",
+          "attr_words": {
+            "lobby_hours": "lobby hours",
+            "driveup_hours": "drive-up hours"
+          }
+        },
+        {
+          "id": "h-hours-day-schedule",
+          "text": "Tell me the {attr} at the {branch} branch for {day}.",
+          "attr_words": {
+            "lobby_hours": "lobby hours",
+            "driveup_hours": "drive-up hours"
+          }
+        },
+        {
+          "id": "h-hours-day-times",
+          "text": "Which opening and closing times are listed under {attr} for the {branch} branch on {day}?",
+          "attr_words": {
+            "lobby_hours": "lobby hours",
+            "driveup_hours": "drive-up hours"
+          }
+        }
+      ]
+    },
+    "closure": {
+      "kind": "dated",
+      "category": "temporal_as_of",
+      "intent": "status",
+      "pairs": [
+        [
+          "branch",
+          "closure_date"
+        ]
+      ],
+      "templates": [
+        {
+          "id": "h-closure-event-date",
+          "text": "What is the {attr} of Dupaco's {branch} branch?",
+          "attr_words": {
+            "closure_date": "permanent closure date"
+          }
+        },
+        {
+          "id": "h-closure-recorded-date",
+          "text": "Please give the {attr} recorded for the {branch} branch.",
+          "attr_words": {
+            "closure_date": "permanent closure date"
+          }
+        },
+        {
+          "id": "h-closure-calendar-date",
+          "text": "Which calendar date is listed as the {attr} for the {branch} branch?",
+          "attr_words": {
+            "closure_date": "permanent closure date"
+          }
+        }
+      ]
+    },
+    "count": {
+      "kind": "dated",
+      "category": "current_value",
+      "intent": "count",
+      "forbid": [
+        "year"
+      ],
+      "pairs": [
+        [
+          "branch_count",
+          "count"
+        ],
+        [
+          "employee_count",
+          "count"
+        ],
+        [
+          "county_count",
+          "count"
+        ]
+      ],
+      "names": {
+        "branch_count": "Dupaco branch locations",
+        "employee_count": "Dupaco employees",
+        "county_count": "counties served by Dupaco"
+      },
+      "templates": [
+        {
+          "id": "h-count-total-number",
+          "text": "What is the total number of {name}?",
+          "attr_words": {
+            "count": "count"
+          }
+        },
+        {
+          "id": "h-count-reported-many",
+          "text": "How many {name} are reported?",
+          "attr_words": {
+            "count": "count"
+          }
+        },
+        {
+          "id": "h-count-published-total",
+          "text": "Give the published total for {name}.",
+          "attr_words": {
+            "count": "count"
+          }
+        }
+      ]
+    },
+    "count_year": {
+      "kind": "dated",
+      "category": "temporal_as_of",
+      "intent": "count",
+      "require_any": [
+        "year"
+      ],
+      "pairs": [
+        [
+          "vto_users",
+          "count"
+        ],
+        [
+          "volunteer_hours",
+          "count"
+        ]
+      ],
+      "names": {
+        "vto_users": "employees who used Volunteer Time Off",
+        "volunteer_hours": "hours volunteered by employees"
+      },
+      "templates": [
+        {
+          "id": "h-count-year-total",
+          "text": "Give Dupaco's {year} total for {name}.",
+          "attr_words": {
+            "count": "count"
+          }
+        },
+        {
+          "id": "h-count-year-reported",
+          "text": "How many {name} did Dupaco report for {year}?",
+          "attr_words": {
+            "count": "count"
+          }
+        },
+        {
+          "id": "h-count-year-published",
+          "text": "Looking at {year}, what number did Dupaco publish for {name}?",
+          "attr_words": {
+            "count": "count"
+          }
+        }
+      ]
+    },
+    "contested_day": {
+      "kind": "contested_day",
+      "category": "contested_day",
+      "intent": "value",
+      "templates": [
+        {
+          "id": "h-contested-1",
+          "text": "At the date {date}, what {attr} is listed for {name}?"
+        },
+        {
+          "id": "h-contested-2",
+          "text": "Please establish the {attr} applicable to {name} on {date}."
+        },
+        {
+          "id": "h-contested-3",
+          "text": "For my historical review of {name}, I need its {attr} on {date}."
+        }
+      ],
+      "weight": 0,
+      "forbid": [
+        "balance_min",
+        "balance_max"
+      ]
+    },
+    "hours_unlisted": {
+      "kind": "unlisted_branch",
+      "category": "should_refuse",
+      "intent": "hours",
+      "pairs": [
+        [
+          "branch",
+          "lobby_hours"
+        ],
+        [
+          "branch",
+          "driveup_hours"
+        ]
+      ],
+      "branches": [
+        "Mullan Avenue",
+        "Coralville",
+        "Waterloo"
+      ],
+      "templates": [
+        {
+          "id": "h-hours-unlisted-week",
+          "text": "What are the weekly {attr} for Dupaco's {branch} branch?",
+          "attr_words": {
+            "lobby_hours": "lobby hours",
+            "driveup_hours": "drive-up hours"
+          }
+        },
+        {
+          "id": "h-hours-unlisted-schedule",
+          "text": "Give me the {attr} schedule at the {branch} branch.",
+          "attr_words": {
+            "lobby_hours": "lobby hours",
+            "driveup_hours": "drive-up hours"
+          }
+        },
+        {
+          "id": "h-hours-unlisted-times",
+          "text": "Please list the opening and closing times under {attr} for Dupaco's {branch} branch.",
+          "attr_words": {
+            "lobby_hours": "lobby hours",
+            "driveup_hours": "drive-up hours"
+          }
+        }
+      ]
+    },
+    "description": {
+      "kind": "prose",
+      "category": "entity_attribution",
+      "intent": "value",
+      "templates": [
+        {
+          "id": "h-description-1",
+          "text": "Please explain what {product} offers and what it is used for."
+        },
+        {
+          "id": "h-description-2",
+          "text": "I would like an overview of {product}; how does this product or service work?"
+        },
+        {
+          "id": "h-description-3",
+          "text": "Which features are described in Dupaco's information about {product}?"
+        }
+      ]
+    },
+    "eligibility": {
+      "kind": "prose",
+      "category": "conflict_resolution",
+      "intent": "value",
+      "templates": [
+        {
+          "id": "h-eligibility-1",
+          "text": "For {product}, who meets the published qualification rules?"
+        },
+        {
+          "id": "h-eligibility-2",
+          "text": "Before I apply for {product}, which eligibility conditions should I check?"
+        },
+        {
+          "id": "h-eligibility-3",
+          "text": "Explain the requirements for someone to be eligible for {product}."
+        }
+      ]
+    },
+    "recognition": {
+      "kind": "prose",
+      "category": "stale_trap",
+      "intent": "value",
+      "templates": [
+        {
+          "id": "h-recognition-1",
+          "text": "Please identify the award or ranking associated with {product}."
+        },
+        {
+          "id": "h-recognition-2",
+          "text": "What distinction is described in the information about {product}?"
+        },
+        {
+          "id": "h-recognition-3",
+          "text": "For {product}, summarize the recognition that was announced."
+        }
+      ]
+    },
+    "fee": {
+      "kind": "prose",
+      "category": "current_value",
+      "intent": "value",
+      "templates": [
+        {
+          "id": "h-fee-1",
+          "text": "For {product}, what amount is shown on the fee schedule?"
+        },
+        {
+          "id": "h-fee-2",
+          "text": "Please identify the listed charge associated with {product}."
+        },
+        {
+          "id": "h-fee-3",
+          "text": "I need to budget for {product}; how much is the published fee?"
+        }
+      ]
+    }
+  }
+}

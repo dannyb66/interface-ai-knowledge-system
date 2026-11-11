@@ -1,0 +1,83 @@
+{
+  "authorship": "Independently authored from product registry semantics and the template input schema, before any holdout scoring; no existing question or template wording was inspected.",
+  "families": {
+    "hours_branch": {
+      "kind": "dated_branch",
+      "category": "branch_info",
+      "intent": "hours",
+      "pairs": [["branch", "lobby_hours"], ["branch", "driveup_hours"]],
+      "templates": [
+        {"id": "h-hours-weekly-list", "text": "List the weekly {attr} for Dupaco's {branch} branch.", "attr_words": {"lobby_hours": "lobby hours", "driveup_hours": "drive-up hours"}},
+        {"id": "h-hours-weekly-throughout", "text": "What are the {attr} throughout the week at the {branch} branch?", "attr_words": {"lobby_hours": "lobby hours", "driveup_hours": "drive-up hours"}},
+        {"id": "h-hours-weekly-schedule", "text": "Show the regular weekly schedule of {attr} for the {branch} branch.", "attr_words": {"lobby_hours": "lobby hours", "driveup_hours": "drive-up hours"}}
+      ]
+    },
+    "hours_day": {
+      "kind": "dated",
+      "category": "branch_info",
+      "intent": "hours",
+      "pairs": [["branch", "lobby_hours"], ["branch", "driveup_hours"]],
+      "templates": [
+        {"id": "h-hours-day-inquiry", "text": "For {day}, what are the {attr} at Dupaco's {branch} branch?", "attr_words": {"lobby_hours": "lobby hours", "driveup_hours": "drive-up hours"}},
+        {"id": "h-hours-day-schedule", "text": "Tell me the {attr} at the {branch} branch for {day}.", "attr_words": {"lobby_hours": "lobby hours", "driveup_hours": "drive-up hours"}},
+        {"id": "h-hours-day-times", "text": "Which opening and closing times are listed under {attr} for the {branch} branch on {day}?", "attr_words": {"lobby_hours": "lobby hours", "driveup_hours": "drive-up hours"}}
+      ]
+    },
+    "closure": {
+      "kind": "dated",
+      "category": "temporal_as_of",
+      "intent": "status",
+      "pairs": [["branch", "closure_date"]],
+      "templates": [
+        {"id": "h-closure-event-date", "text": "What is the {attr} of Dupaco's {branch} branch?", "attr_words": {"closure_date": "permanent closure date"}},
+        {"id": "h-closure-recorded-date", "text": "Please give the {attr} recorded for the {branch} branch.", "attr_words": {"closure_date": "permanent closure date"}},
+        {"id": "h-closure-calendar-date", "text": "Which calendar date is listed as the {attr} for the {branch} branch?", "attr_words": {"closure_date": "permanent closure date"}}
+      ]
+    },
+    "count": {
+      "kind": "dated",
+      "category": "current_value",
+      "intent": "count",
+      "forbid": ["year"],
+      "pairs": [["branch_count", "count"], ["employee_count", "count"], ["county_count", "count"]],
+      "names": {
+        "branch_count": "Dupaco branch locations",
+        "employee_count": "Dupaco employees",
+        "county_count": "counties served by Dupaco"
+      },
+      "templates": [
+        {"id": "h-count-total-number", "text": "What is the total number of {name}?", "attr_words": {"count": "count"}},
+        {"id": "h-count-reported-many", "text": "How many {name} are reported?", "attr_words": {"count": "count"}},
+        {"id": "h-count-published-total", "text": "Give the published total for {name}.", "attr_words": {"count": "count"}}
+      ]
+    },
+    "count_year": {
+      "kind": "dated",
+      "category": "temporal_as_of",
+      "intent": "count",
+      "require_any": ["year"],
+      "pairs": [["vto_users", "count"], ["volunteer_hours", "count"]],
+      "names": {
+        "vto_users": "employees who used Volunteer Time Off",
+        "volunteer_hours": "hours volunteered by employees"
+      },
+      "templates": [
+        {"id": "h-count-year-total", "text": "Give Dupaco's {year} total for {name}.", "attr_words": {"count": "count"}},
+        {"id": "h-count-year-reported", "text": "How many {name} did Dupaco report for {year}?", "attr_words": {"count": "count"}},
+        {"id": "h-count-year-published", "text": "Looking at {year}, what number did Dupaco publish for {name}?", "attr_words": {"count": "count"}}
+      ]
+    },
+    "hours_unlisted": {
+      "kind": "unlisted_branch",
+      "category": "should_refuse",
+      "intent": "hours",
+      "pairs": [["branch", "lobby_hours"], ["branch", "driveup_hours"]],
+      "branches": ["Mullan Avenue", "Coralville", "Waterloo"],
+      "templates": [
+        {"id": "h-hours-unlisted-week", "text": "What are the weekly {attr} for Dupaco's {branch} branch?", "attr_words": {"lobby_hours": "lobby hours", "driveup_hours": "drive-up hours"}},
+        {"id": "h-hours-unlisted-schedule", "text": "Give me the {attr} schedule at the {branch} branch.", "attr_words": {"lobby_hours": "lobby hours", "driveup_hours": "drive-up hours"}},
+        {"id": "h-hours-unlisted-times", "text": "Please list the opening and closing times under {attr} for Dupaco's {branch} branch.", "attr_words": {"lobby_hours": "lobby hours", "driveup_hours": "drive-up hours"}}
+      ]
+    }
+  }
+}

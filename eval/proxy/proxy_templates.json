@@ -1,0 +1,183 @@
+{
+ "names": {"cert_special": "{term} {jumbo} certificate special", "cert_regular": "{term} regular certificate", "ira_cert": "{term} {program} IRA {jumbo} {special} certificate", "business_cert_special": "{term} {jumbo} business certificate special", "business_cert_regular": "{term} regular business certificate", "free_checking": "Free Checking account", "auto_loan": "{term} auto loan for a {model_year} vehicle", "atv_loan": "{term} ATV loan for a {model_year} model", "personal_loan": "{term} personal loan", "home_equity": "{term} home equity loan", "heloc": "home equity line of credit", "platinum_visa": "Platinum Visa", "rewards_visa": "Rewards Visa", "business_platinum_visa": "Business Platinum Visa", "business_rewards_visa": "Business Rewards Visa", "mortgage_purchase": "{years} fixed-rate purchase mortgage{loan_amount}", "mortgage_refi": "{years} fixed-rate refinance{loan_amount}", "cash_out_refi": "{years} fixed-rate cash-out refinance{loan_amount}", "mortgage_rate_relief": "Mortgage Rate Relief Program", "share_savings": "Share Savings", "high_yield_savings": "High-Yield Savings", "you_name_it_savings": "You Name It Savings", "money_market_investors_choice": "Investor's Choice Money Market", "achieve_money_market": "Achieve Money Market", "first_rate_checking": "1st Rate Checking", "hsa": "Health Savings Account", "ira_variable": "{program} IRA savings account", "bright_savings": "Bright Savings", "launchpad_savings": "Launchpad Savings", "holiday_club_savings": "Holiday Club Savings", "business_savings": "Business Share Savings", "business_high_yield_savings": "business High-Yield Savings", "business_money_market": "business Investor's Choice Money Market", "business_you_name_it_savings": "business You Name It Savings", "business_checking": "Business 1st Rate Checking", "boat_rv_loan": "{term} boat loan", "home_improvement_loan": "{term} home improvement loan", "construction_loan": "construction loan", "student_loans": "student loan", "home_start": "Home$tart loan"},
+ "name_sets": {"colloquial": {"cert_special": "{term} {jumbo} special CD", "cert_regular": "{term} CD", "ira_cert": "{term} {program} IRA {jumbo} {special} CD", "business_cert_special": "{term} {jumbo} business CD special", "business_cert_regular": "{term} business CD", "free_checking": "free checking account", "auto_loan": "{term} car loan on a {model_year} car", "atv_loan": "{term} ATV loan on a {model_year} ATV", "personal_loan": "{term} personal loan", "home_equity": "{term} home equity loan", "heloc": "HELOC", "platinum_visa": "Platinum Visa card", "rewards_visa": "Rewards Visa card", "business_platinum_visa": "business Platinum Visa card", "business_rewards_visa": "business Rewards Visa card", "mortgage_purchase": "{years} fixed mortgage{loan_amount}", "mortgage_refi": "{years} fixed refi{loan_amount}", "cash_out_refi": "{years} cash-out refi{loan_amount}", "mortgage_rate_relief": "mortgage rate relief loan", "share_savings": "share savings account", "high_yield_savings": "high-yield savings account", "you_name_it_savings": "You Name It savings account", "money_market_investors_choice": "Investor's Choice account", "achieve_money_market": "Achieve money market account", "first_rate_checking": "1st Rate checking account", "hsa": "HSA", "ira_variable": "{program} IRA savings", "bright_savings": "Bright savings account", "launchpad_savings": "Launchpad account", "holiday_club_savings": "Holiday Club account", "business_savings": "business share savings account", "business_high_yield_savings": "business high-yield savings account", "business_money_market": "business money market account", "business_you_name_it_savings": "business You Name It account", "business_checking": "business 1st Rate checking account", "boat_rv_loan": "{term} RV loan", "home_improvement_loan": "{term} home improvement loan"}},
+ "attributes": {"apy": "{intro} APY", "apr": "{intro} APR", "rate": "{intro} interest rate", "dividend_rate": "dividend rate", "lobby_hours": "lobby hours", "driveup_hours": "drive-up hours", "credit_limit": "credit limit", "credit_score": "credit score", "closure_date": "closing date"},
+ "families": {
+  "rate_current": {
+   "kind": "current",
+   "category": "current_value",
+   "trap_category": "stale_trap",
+   "intent": "value",
+   "forbid": ["balance_min", "balance_max"],
+   "templates": [
+    {"id": "p-rc-1", "text": "What is the {attr} on the {name}?"},
+    {"id": "p-rc-2", "text": "What {attr} does Dupaco currently list for the {name}?"},
+    {"id": "p-rc-3", "text": "Could you tell me today's {attr} for the {name}?", "name_set": "colloquial", "attr_words": {"apy": "{intro} yield", "rate": "{intro} rate"}}
+   ]
+  },
+  "rate_as_of": {
+   "kind": "as_of",
+   "category": "temporal_as_of",
+   "intent": "value",
+   "forbid": ["balance_min", "balance_max"],
+   "templates": [
+    {"id": "p-ra-1", "text": "What was the {attr} on the {name} on {date}?", "as_of": "text"},
+    {"id": "p-ra-2", "text": "What was the {attr} for the {name}?", "as_of": "argument"},
+    {"id": "p-ra-3", "text": "As of {date}, what {attr} did Dupaco list for the {name}?", "as_of": "text", "name_set": "colloquial", "attr_words": {"apy": "{intro} yield", "apr": "{intro} rate", "rate": "{intro} rate"}}
+   ]
+  },
+  "contested_day": {
+   "kind": "contested_day",
+   "category": "contested_day",
+   "intent": "value",
+   "weight": 0,
+   "forbid": ["balance_min", "balance_max"],
+   "templates": [
+    {"id": "p-cd-1", "text": "On {date}, what {attr} did the {name} carry?", "as_of": "text"}
+   ]
+  },
+  "rate_change": {
+   "kind": "change",
+   "category": "change_between_snapshots",
+   "intent": "change",
+   "forbid": ["balance_min", "balance_max"],
+   "templates": [
+    {"id": "p-ch-1", "text": "How did the {attr} on the {name} change between {date_from} and {date_to}?", "endpoints": "consecutive"},
+    {"id": "p-ch-2", "text": "Did the {attr} on the {name} change from {date_from} to {date_to}?", "endpoints": "consecutive"},
+    {"id": "p-ch-3", "text": "How has the {attr} on the {name} changed since {date_from}?", "endpoints": "to_latest"},
+    {"id": "p-ch-4", "text": "What has happened to the {attr} on the {name} since {date_from}?", "endpoints": "to_latest", "name_set": "colloquial", "attr_words": {"apy": "{intro} yield", "apr": "{intro} rate", "rate": "{intro} rate"}}
+   ]
+  },
+  "tier_amount": {
+   "kind": "tier_amount",
+   "category": "tier_disambiguation",
+   "intent": "value",
+   "require_any": ["balance_min", "balance_max", "loan_amount_max"],
+   "templates": [
+    {"id": "p-ta-1", "text": "What {attr} would a balance of {amount} earn in {name}?", "attributes": ["apy"]},
+    {"id": "p-ta-2", "text": "If I deposit {amount} into my {name}, what {attr} applies?", "attributes": ["apy"], "name_set": "colloquial", "attr_words": {"apy": "{intro} yield"}},
+    {"id": "p-ta-3", "text": "What's the {attr} for a {name} of {amount}?", "attributes": ["apr", "rate"]},
+    {"id": "p-ta-4", "text": "If I borrow {amount} with a {name}, what {attr} would I pay?", "attributes": ["apr", "rate"], "name_set": "colloquial", "attr_words": {"apr": "{intro} rate", "rate": "{intro} rate"}}
+   ]
+  },
+  "refuse_unpublished": {
+   "kind": "unpublished",
+   "category": "should_refuse",
+   "intent": "value",
+   "names": {"construction_loan": "construction loan", "student_loans": "student loan", "home_start": "Home$tart loan", "platinum_visa": "Platinum Visa", "rewards_visa": "Rewards Visa", "business_platinum_visa": "Business Platinum Visa", "business_rewards_visa": "Business Rewards Visa", "personal_loan": "personal loan", "auto_loan": "car loan", "atv_loan": "snowmobile loan", "boat_rv_loan": "boat loan", "home_equity": "home equity loan", "heloc": "home equity line of credit", "mortgage_purchase": "home purchase mortgage"},
+   "templates": [
+    {"id": "p-ru-1", "text": "What {attr} does Dupaco charge on a {name}?", "attributes": ["rate"]},
+    {"id": "p-ru-2", "text": "What's the current {attr} for a {name}?", "attributes": ["rate"]},
+    {"id": "p-ru-3", "text": "Tell me the {attr} Dupaco offers on a {name}.", "attributes": ["rate"]},
+    {"id": "p-ru-4", "text": "What {attr} comes with the {name}?", "attributes": ["credit_limit"]},
+    {"id": "p-ru-5", "text": "How large is the {attr} on a {name}?", "attributes": ["credit_limit"]},
+    {"id": "p-ru-6", "text": "What starting {attr} does Dupaco give on the {name}?", "attributes": ["credit_limit"]},
+    {"id": "p-ru-7", "text": "What {attr} do I need for a {name}?", "attributes": ["credit_score"]},
+    {"id": "p-ru-8", "text": "What {attr} is required to get a {name}?", "attributes": ["credit_score"]},
+    {"id": "p-ru-9", "text": "Which {attr} does Dupaco look for before approving a {name}?", "attributes": ["credit_score"]}
+   ]
+  },
+  "hours_branch": {
+   "kind": "dated_branch",
+   "category": "branch_info",
+   "intent": "hours",
+   "templates": [
+    {"id": "p-hb-1", "text": "What are the {attr} at the {branch} branch?"},
+    {"id": "p-hb-2", "text": "When is the {branch} branch {attr} open?", "attr_words": {"lobby_hours": "lobby", "driveup_hours": "drive-up"}},
+    {"id": "p-hb-3", "text": "Can you list the {attr} for Dupaco's {branch} branch?"}
+   ]
+  },
+  "hours_day": {
+   "kind": "dated",
+   "category": "branch_info",
+   "intent": "hours",
+   "templates": [
+    {"id": "p-hd-1", "text": "What are the {attr} at the {branch} branch on {day}?"},
+    {"id": "p-hd-2", "text": "What time is the {branch} branch {attr} open on {day}?", "attr_words": {"lobby_hours": "lobby", "driveup_hours": "drive-thru"}},
+    {"id": "p-hd-3", "text": "On {day}, what {attr} does the {branch} branch keep?"}
+   ]
+  },
+  "closure": {
+   "kind": "dated",
+   "category": "temporal_as_of",
+   "intent": "status",
+   "templates": [
+    {"id": "p-cl-1", "text": "What is the {attr} for the {branch} branch?"},
+    {"id": "p-cl-2", "text": "On what date does the {branch} branch shut its doors?"}
+   ]
+  },
+  "count": {
+   "kind": "dated",
+   "category": "current_value",
+   "intent": "count",
+   "forbid": ["year"],
+   "names": {"branch_count": "branch locations", "employee_count": "employees", "county_count": "counties"},
+   "templates": [
+    {"id": "p-co-1", "text": "How many {name} does Dupaco have?"},
+    {"id": "p-co-2", "text": "What is the total number of Dupaco {name}?"}
+   ]
+  },
+  "count_year": {
+   "kind": "dated",
+   "category": "temporal_as_of",
+   "intent": "count",
+   "require_any": ["year"],
+   "names": {"vto_users": "Dupaco employees used Volunteer Time Off", "volunteer_hours": "hours did Dupaco employees volunteer"},
+   "templates": [
+    {"id": "p-cy-1", "text": "In {year}, how many {name}?"},
+    {"id": "p-cy-2", "text": "How many {name} during {year}?"}
+   ]
+  },
+  "hours_unlisted": {
+   "kind": "unlisted_branch",
+   "category": "should_refuse",
+   "intent": "hours",
+   "branches": ["Mullan Avenue", "Coralville", "Waterloo"],
+   "templates": [
+    {"id": "p-hu-1", "text": "What are the {attr} at the {branch} branch?"},
+    {"id": "p-hu-2", "text": "When can I visit the {branch} branch during its {attr}?"},
+    {"id": "p-hu-3", "text": "Please list the {attr} for the {branch} branch."}
+   ]
+  },
+  "description": {
+   "kind": "prose",
+   "category": "entity_attribution",
+   "intent": "value",
+   "templates": [
+    {"id": "p-description-1", "text": "What is the purpose of {product}?"},
+    {"id": "p-description-2", "text": "Describe {product}."},
+    {"id": "p-description-3", "text": "Give me an overview of {product}."}
+   ]
+  },
+  "eligibility": {
+   "kind": "prose",
+   "category": "conflict_resolution",
+   "intent": "value",
+   "templates": [
+    {"id": "p-eligibility-1", "text": "Who is eligible for {product}?"},
+    {"id": "p-eligibility-2", "text": "What are the eligibility requirements for {product}?"},
+    {"id": "p-eligibility-3", "text": "Who qualifies for {product}?"}
+   ]
+  },
+  "recognition": {
+   "kind": "prose",
+   "category": "stale_trap",
+   "intent": "value",
+   "templates": [
+    {"id": "p-recognition-1", "text": "Describe the {product} received by Dupaco."},
+    {"id": "p-recognition-2", "text": "Give the details of Dupaco’s {product}."},
+    {"id": "p-recognition-3", "text": "What is known about Dupaco’s {product}?"}
+   ]
+  },
+  "fee": {
+   "kind": "prose",
+   "category": "current_value",
+   "intent": "value",
+   "templates": [
+    {"id": "p-fee-1", "text": "What is the fee for {product}?"},
+    {"id": "p-fee-2", "text": "How much does {product} cost?"},
+    {"id": "p-fee-3", "text": "What does Dupaco charge for {product}?"}
+   ]
+  }
+ }
+}

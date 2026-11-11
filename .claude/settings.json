@@ -1,0 +1,68 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m pytest *)",
+      "Bash(pytest *)",
+      "Bash(python harness/run_eval.py *)",
+      "Bash(python scripts/*)",
+      "Bash(scripts/*)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)"
+    ],
+    "deny": [
+      "Edit(harness/**)",
+      "Write(harness/**)",
+      "Edit(eval/public_eval.jsonl)",
+      "Write(eval/public_eval.jsonl)",
+      "Edit(starter/**)",
+      "Write(starter/**)",
+      "Edit(snapshots_zip/**)",
+      "Write(snapshots_zip/**)",
+      "Edit(snapshots/**)",
+      "Write(snapshots/**)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git push * --force*)",
+      "Bash(git push * -f*)"
+    ]
+  },
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
+  "plansDirectory": "docs/plans",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/post_edit_tests.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/stop_eval_delta.sh"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/session_start.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

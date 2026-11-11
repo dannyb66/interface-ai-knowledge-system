@@ -1,0 +1,80 @@
+{
+  "families": {
+    "description": {
+      "kind": "prose",
+      "category": "entity_attribution",
+      "intent": "value",
+      "templates": [
+        {
+          "id": "h-description-1",
+          "text": "Please explain what {product} offers and what it is used for."
+        },
+        {
+          "id": "h-description-2",
+          "text": "I would like an overview of {product}; how does this product or service work?"
+        },
+        {
+          "id": "h-description-3",
+          "text": "Which features are described in Dupaco's information about {product}?"
+        }
+      ]
+    },
+    "eligibility": {
+      "kind": "prose",
+      "category": "conflict_resolution",
+      "intent": "value",
+      "templates": [
+        {
+          "id": "h-eligibility-1",
+          "text": "For {product}, who meets the published qualification rules?"
+        },
+        {
+          "id": "h-eligibility-2",
+          "text": "Before I apply for {product}, which eligibility conditions should I check?"
+        },
+        {
+          "id": "h-eligibility-3",
+          "text": "Explain the requirements for someone to be eligible for {product}."
+        }
+      ]
+    },
+    "recognition": {
+      "kind": "prose",
+      "category": "stale_trap",
+      "intent": "value",
+      "templates": [
+        {
+          "id": "h-recognition-1",
+          "text": "Please identify the award or ranking associated with {product}."
+        },
+        {
+          "id": "h-recognition-2",
+          "text": "What distinction is described in the information about {product}?"
+        },
+        {
+          "id": "h-recognition-3",
+          "text": "For {product}, summarize the recognition that was announced."
+        }
+      ]
+    },
+    "fee": {
+      "kind": "prose",
+      "category": "current_value",
+      "intent": "value",
+      "templates": [
+        {
+          "id": "h-fee-1",
+          "text": "For {product}, what amount is shown on the fee schedule?"
+        },
+        {
+          "id": "h-fee-2",
+          "text": "Please identify the listed charge associated with {product}."
+        },
+        {
+          "id": "h-fee-3",
+          "text": "I need to budget for {product}; how much is the published fee?"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,321 @@
+{
+  "_version": "2026-11-06 curated conflicts v2: analysis section 6 entries and the task 10 fix round, quotes copied verbatim from the cited lines",
+  "conflicts": [
+    {
+      "topic": "60-month (60 month, 5-year) auto loan APR, newest model years",
+      "values": ["5.34%", "5.39%"],
+      "resolution": "5.39%",
+      "reason": "The rate sheet and the auto loan page (effective 08/31/2026) are current; the vehicle-affordability calculator and the switch-and-earn page still show the 01/01/2026 table.",
+      "confidence": 0.95,
+      "keys": [["auto_loan", "apr"]],
+      "sources": [
+        {"url": "https://www.dupaco.com/calculators/vehicle-affordability", "snapshot_id": "05_2026-09-28_latest", "value": "5.34%", "quote": "| 2023–26 Model Year | 60 Months | 5.34% APR |"},
+        {"url": "https://www.dupaco.com/switch-and-earn", "snapshot_id": "05_2026-09-28_latest", "value": "5.34%", "quote": "| 2023–26 Model Year | 60 Months | 5.34% APR |"},
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "05_2026-09-28_latest", "value": "5.39%", "quote": "| 2024-27 Model Year | 60 Months | 5.39% APR1 |"},
+        {"url": "https://www.dupaco.com/personal/loans/auto-motorcycle-loans", "snapshot_id": "05_2026-09-28_latest", "value": "5.39%", "quote": "| 2024-27 Model Year | 60 Months | 5.39% APR1 |"}
+      ]
+    },
+    {
+      "topic": "84-month (84 month, 7-year) auto loan APR, newest model years",
+      "values": ["5.54%", "5.59%"],
+      "resolution": "5.59%",
+      "reason": "The rate sheet (effective 08/31/2026) is current; the vehicle-affordability calculator and the switch-and-earn page still show the 01/01/2026 table.",
+      "confidence": 0.93,
+      "keys": [["auto_loan", "apr"]],
+      "sources": [
+        {"url": "https://www.dupaco.com/calculators/vehicle-affordability", "snapshot_id": "05_2026-09-28_latest", "value": "5.54%", "quote": "| 2023–26 Model Year | 84 Months | 5.54% APR |"},
+        {"url": "https://www.dupaco.com/switch-and-earn", "snapshot_id": "05_2026-09-28_latest", "value": "5.54%", "quote": "| 2023–26 Model Year | 84 Months | 5.54% APR |"},
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "05_2026-09-28_latest", "value": "5.59%", "quote": "| 2024-27 Model Year | 84 Months | 5.59% APR1 |"}
+      ]
+    },
+    {
+      "topic": "30-year (30 year) fixed purchase mortgage (home loan) rate and APR",
+      "values": ["6.000%", "6.037%", "6.061%", "5.875%", "5.954%", "5.750%", "5.884%", "7.25%", "7.29%", "7.32%", "7.34%", "7.13%", "7.27%"],
+      "resolution": "7.25% (7.29% / 7.32% / 7.34% APR) / 7.13% (7.27% APR)",
+      "reason": "The rate sheet (effective 09/25/2026) is current; the homebuying guidance page still shows the 04/22/2026 purchase rates.",
+      "confidence": 0.92,
+      "keys": [["mortgage_purchase", "rate"], ["mortgage_purchase", "apr"]],
+      "sources": [
+        {"url": "https://www.dupaco.com/homebuying-guidance", "snapshot_id": "05_2026-09-28_latest", "value": "6.000%", "quote": "| Purchase: 30-Year Fixed Conventional $832,750 or less | 6.000% | 0.00% | 6.037% | $4992.76 |"},
+        {"url": "https://www.dupaco.com/homebuying-guidance", "snapshot_id": "05_2026-09-28_latest", "value": "6.037%", "quote": "| Purchase: 30-Year Fixed Conventional $832,750 or less | 6.000% | 0.00% | 6.037% | $4992.76 |"},
+        {"url": "https://www.dupaco.com/homebuying-guidance", "snapshot_id": "05_2026-09-28_latest", "value": "6.000%", "quote": "| Purchase: 30-Year Fixed Conventional $300,000 or less | 6.000% | 0.00% | 6.061% | $1798.55 |"},
+        {"url": "https://www.dupaco.com/homebuying-guidance", "snapshot_id": "05_2026-09-28_latest", "value": "6.061%", "quote": "| Purchase: 30-Year Fixed Conventional $300,000 or less | 6.000% | 0.00% | 6.061% | $1798.55 |"},
+        {"url": "https://www.dupaco.com/homebuying-guidance", "snapshot_id": "05_2026-09-28_latest", "value": "5.875%", "quote": "| Purchase: 30-Year Fixed Conventional $200,000 or less | 5.875% | 0.00% | 5.954% | $1183.22 |"},
+        {"url": "https://www.dupaco.com/homebuying-guidance", "snapshot_id": "05_2026-09-28_latest", "value": "5.954%", "quote": "| Purchase: 30-Year Fixed Conventional $200,000 or less | 5.875% | 0.00% | 5.954% | $1183.22 |"},
+        {"url": "https://www.dupaco.com/homebuying-guidance", "snapshot_id": "05_2026-09-28_latest", "value": "5.750%", "quote": "| Purchase: 30-Year Fixed Conventional $100,000 or less | 5.750% | 0.00% | 5.884% | $ 583.65 |"},
+        {"url": "https://www.dupaco.com/homebuying-guidance", "snapshot_id": "05_2026-09-28_latest", "value": "5.884%", "quote": "| Purchase: 30-Year Fixed Conventional $100,000 or less | 5.750% | 0.00% | 5.884% | $ 583.65 |"},
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "05_2026-09-28_latest", "value": "7.25%", "quote": "| Purchase: 30-Year Fixed Conventional $832,750 or less | 7.25% | 0 | 7.29% | $5,680.83 |"},
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "05_2026-09-28_latest", "value": "7.29%", "quote": "| Purchase: 30-Year Fixed Conventional $832,750 or less | 7.25% | 0 | 7.29% | $5,680.83 |"},
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "05_2026-09-28_latest", "value": "7.25%", "quote": "| Purchase: 30-Year Fixed Conventional $300,000 or less | 7.25% | 0 | 7.32% | $2,046.53 |"},
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "05_2026-09-28_latest", "value": "7.32%", "quote": "| Purchase: 30-Year Fixed Conventional $300,000 or less | 7.25% | 0 | 7.32% | $2,046.53 |"},
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "05_2026-09-28_latest", "value": "7.25%", "quote": "| Purchase: 30-Year Fixed Conventional $200,000 or less | 7.25% | 0 | 7.34% | $1,364.52 |"},
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "05_2026-09-28_latest", "value": "7.34%", "quote": "| Purchase: 30-Year Fixed Conventional $200,000 or less | 7.25% | 0 | 7.34% | $1,364.52 |"},
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "05_2026-09-28_latest", "value": "7.13%", "quote": "| Purchase: 30-Year Fixed Conventional $100,000 or less | 7.13% | 0 | 7.27% | $673.80 |"},
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "05_2026-09-28_latest", "value": "7.27%", "quote": "| Purchase: 30-Year Fixed Conventional $100,000 or less | 7.13% | 0 | 7.27% | $673.80 |"}
+      ]
+    },
+    {
+      "topic": "1st Rate Checking APY and dividend rate, $5,000-$24,999.99 tier",
+      "values": ["3.00%", "2.96%", "2.50%", "2.47%"],
+      "resolution": "2.50% APY (2.47% dividend rate)",
+      "reason": "The rate sheet and the checking accounts page (effective 06/02/2026) are current; the checking-offer, new-card balance-transfer and tax-checking landing pages still show the 07/01/2025 rates.",
+      "confidence": 0.9,
+      "keys": [["first_rate_checking", "apy"]],
+      "sources": [
+        {"url": "https://www.dupaco.com/checking-offer-lp", "snapshot_id": "05_2026-09-28_latest", "value": "3.00%", "quote": "| $5,000 - $24,999.99 | 2.96% | 3.00% | None | $5,000 |"},
+        {"url": "https://www.dupaco.com/checking-offer-lp", "snapshot_id": "05_2026-09-28_latest", "value": "2.96%", "quote": "| $5,000 - $24,999.99 | 2.96% | 3.00% | None | $5,000 |"},
+        {"url": "https://www.dupaco.com/newcard-balancetransfer-lp", "snapshot_id": "05_2026-09-28_latest", "value": "3.00%", "quote": "| $5,000 - $24,999.99 | 2.96% | 3.00% | None | $5,000 |"},
+        {"url": "https://www.dupaco.com/newcard-balancetransfer-lp", "snapshot_id": "05_2026-09-28_latest", "value": "2.96%", "quote": "| $5,000 - $24,999.99 | 2.96% | 3.00% | None | $5,000 |"},
+        {"url": "https://www.dupaco.com/tax-checking-offer-lp", "snapshot_id": "05_2026-09-28_latest", "value": "3.00%", "quote": "| $5,000 - $24,999.99 | 2.96% | 3.00% | None | $5,000 |"},
+        {"url": "https://www.dupaco.com/tax-checking-offer-lp", "snapshot_id": "05_2026-09-28_latest", "value": "2.96%", "quote": "| $5,000 - $24,999.99 | 2.96% | 3.00% | None | $5,000 |"},
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "05_2026-09-28_latest", "value": "2.50%", "quote": "| 1st Rate Checking | $5,000 – $24,999.99 | 2.47% | 2.50% | — | $5,000.00 |"},
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "05_2026-09-28_latest", "value": "2.47%", "quote": "| 1st Rate Checking | $5,000 – $24,999.99 | 2.47% | 2.50% | — | $5,000.00 |"},
+        {"url": "https://www.dupaco.com/personal/checking-accounts", "snapshot_id": "05_2026-09-28_latest", "value": "2.50%", "quote": "| 1st Rate Checking | $5,000 – $24,999.99 | 2.47% | 2.50% | — | $5,000.00 |"},
+        {"url": "https://www.dupaco.com/personal/checking-accounts", "snapshot_id": "05_2026-09-28_latest", "value": "2.47%", "quote": "| 1st Rate Checking | $5,000 – $24,999.99 | 2.47% | 2.50% | — | $5,000.00 |"}
+      ]
+    },
+    {
+      "topic": "number of branch office locations (branches, offices, branch count)",
+      "values": ["22 branch office locations", "23 branch office locations", "24 branch office locations"],
+      "resolution": "22 branch office locations",
+      "reason": "The newest press release (May 5, 2026, after the Hy-Vee branch closed on March 31, 2026) lists 22; the 23 and 24 come from the About Dupaco text of older releases (March 17, 2026 and June 18, 2024).",
+      "confidence": 0.85,
+      "keys": [["branch_count", "count"]],
+      "sources": [
+        {"url": "https://www.dupaco.com/newsroom/dupaco-helping-homebuyers-navigate-todays-market", "snapshot_id": "05_2026-09-28_latest", "value": "22 branch office locations", "quote": "It has over 600 employees and 22 branch office locations."},
+        {"url": "https://www.dupaco.com/newsroom/dupaco-warns-consumers-about-new-wave-of-irs-impersonation-scams", "snapshot_id": "05_2026-09-28_latest", "value": "23 branch office locations", "quote": "It has over 600 employees and 23 branch office locations."},
+        {"url": "https://www.dupaco.com/newsroom/forbes-ranks-dupaco-as-a-top-credit-union-in-america-3", "snapshot_id": "05_2026-09-28_latest", "value": "24 branch office locations", "quote": "It has over 650 employees and 24 branch office locations."}
+      ]
+    },
+    {
+      "topic": "times Forbes recognized Dupaco (Forbes recognition, ranking, top credit union)",
+      "values": ["fourth time", "fifth time"],
+      "resolution": "fifth time",
+      "reason": "The newer release (June 18, 2024) says the fifth time; the July 18, 2023 release said the fourth.",
+      "confidence": 0.8,
+      "keys": [["forbes_recognition", "description"]],
+      "sources": [
+        {"url": "https://www.dupaco.com/newsroom/forbes-ranks-dupaco-as-a-top-credit-union-in-america-2", "snapshot_id": "05_2026-09-28_latest", "value": "fourth time", "quote": "It was the fourth time Forbes recognized Dupaco."},
+        {"url": "https://www.dupaco.com/newsroom/forbes-ranks-dupaco-as-a-top-credit-union-in-america-3", "snapshot_id": "05_2026-09-28_latest", "value": "fifth time", "quote": "This was the fifth time Forbes recognized Dupaco."}
+      ]
+    },
+    {
+      "topic": "72-month (72 month, 6-year) auto loan APR, newest model years",
+      "values": ["5.44%", "5.49%"],
+      "resolution": "5.49%",
+      "reason": "The rate sheet (effective 08/31/2026) is current; the vehicle-affordability calculator still shows the 01/01/2026 table.",
+      "confidence": 0.75,
+      "keys": [["auto_loan", "apr"]],
+      "sources": [
+        {"url": "https://www.dupaco.com/calculators/vehicle-affordability", "snapshot_id": "05_2026-09-28_latest", "value": "5.44%", "quote": "| 2023–26 Model Year | 72 Months | 5.44% APR |"},
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "05_2026-09-28_latest", "value": "5.49%", "quote": "| 2024-27 Model Year | 72 Months | 5.49% APR |"}
+      ]
+    },
+    {
+      "topic": "30-year (30 year) fixed refinance (refi) mortgage (home loan) rate and APR",
+      "values": ["6.000%", "6.049%", "6.072%", "5.875%", "5.966%", "5.750%", "5.896%", "7.25%", "7.30%", "7.33%", "7.35%", "7.13%", "7.28%", "6.125%", "6.375%"],
+      "resolution": "7.25% (7.30% / 7.33% / 7.35% APR) / 7.13% (7.28% APR)",
+      "reason": "The rate sheet (effective 09/25/2026) is current; the mortgage refinance page still shows the 04/22/2026 refinance rates, and in crawl 01 the rate sheet's third refinance table showed 6.375% (effective 04/02/2026) beside the main table's 6.125% (effective 05/11/2026).",
+      "confidence": 0.7,
+      "keys": [["mortgage_refi", "apr"]],
+      "sources": [
+        {"url": "https://www.dupaco.com/mortgage-refi", "snapshot_id": "05_2026-09-28_latest", "value": "6.000%", "quote": "| Refinance: 30-Year Fixed Conventional $832,750 or less | 6.000% | 0.00% | 6.049% | $4992.76 |"},
+        {"url": "https://www.dupaco.com/mortgage-refi", "snapshot_id": "05_2026-09-28_latest", "value": "6.049%", "quote": "| Refinance: 30-Year Fixed Conventional $832,750 or less | 6.000% | 0.00% | 6.049% | $4992.76 |"},
+        {"url": "https://www.dupaco.com/mortgage-refi", "snapshot_id": "05_2026-09-28_latest", "value": "6.000%", "quote": "| Refinance: 30-Year Fixed Conventional $300,000 or less | 6.000% | 0.00% | 6.072% | $1798.65 |"},
+        {"url": "https://www.dupaco.com/mortgage-refi", "snapshot_id": "05_2026-09-28_latest", "value": "6.072%", "quote": "| Refinance: 30-Year Fixed Conventional $300,000 or less | 6.000% | 0.00% | 6.072% | $1798.65 |"},
+        {"url": "https://www.dupaco.com/mortgage-refi", "snapshot_id": "05_2026-09-28_latest", "value": "5.875%", "quote": "| Refinance: 30-Year Fixed Conventional $200000 or less | 5.875% | 0.00% | 5.966% | $1183.22 |"},
+        {"url": "https://www.dupaco.com/mortgage-refi", "snapshot_id": "05_2026-09-28_latest", "value": "5.966%", "quote": "| Refinance: 30-Year Fixed Conventional $200000 or less | 5.875% | 0.00% | 5.966% | $1183.22 |"},
+        {"url": "https://www.dupaco.com/mortgage-refi", "snapshot_id": "05_2026-09-28_latest", "value": "5.750%", "quote": "| Refinance: 30-Year Fixed Conventional $100000 or less | 5.750% | 0.00% | 5.896% | $ 583.65 |"},
+        {"url": "https://www.dupaco.com/mortgage-refi", "snapshot_id": "05_2026-09-28_latest", "value": "5.896%", "quote": "| Refinance: 30-Year Fixed Conventional $100000 or less | 5.750% | 0.00% | 5.896% | $ 583.65 |"},
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "05_2026-09-28_latest", "value": "7.25%", "quote": "| Refinance: 30-Year Fixed Conventional $832,750 or less | 7.25% | 0 | 7.30% | $5,680.83 |"},
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "05_2026-09-28_latest", "value": "7.30%", "quote": "| Refinance: 30-Year Fixed Conventional $832,750 or less | 7.25% | 0 | 7.30% | $5,680.83 |"},
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "05_2026-09-28_latest", "value": "7.25%", "quote": "| Refinance: 30-Year Fixed Conventional $300,000 or less | 7.25% | 0 | 7.33% | $2,046.53 |"},
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "05_2026-09-28_latest", "value": "7.33%", "quote": "| Refinance: 30-Year Fixed Conventional $300,000 or less | 7.25% | 0 | 7.33% | $2,046.53 |"},
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "05_2026-09-28_latest", "value": "7.25%", "quote": "| Refinance: 30-Year Fixed Conventional $200,000 or less | 7.25% | 0 | 7.35% | $1,364.52 |"},
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "05_2026-09-28_latest", "value": "7.35%", "quote": "| Refinance: 30-Year Fixed Conventional $200,000 or less | 7.25% | 0 | 7.35% | $1,364.52 |"},
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "05_2026-09-28_latest", "value": "7.13%", "quote": "| Refinance: 30-Year Fixed Conventional $100,000 or less | 7.13% | 0 | 7.28% | $673.80 |"},
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "05_2026-09-28_latest", "value": "7.28%", "quote": "| Refinance: 30-Year Fixed Conventional $100,000 or less | 7.13% | 0 | 7.28% | $673.80 |"},
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "01_2026-05-12_baseline", "value": "6.125%", "quote": "| Refinance: 30-Year Fixed Conventional $832,750 or less | 6.125% | 0.00% | 6.174% | $5059.88 |"},
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "01_2026-05-12_baseline", "value": "6.375%", "quote": "| Refinance: 30-Year Fixed Conventional $832750 or less | 6.375% | 0.00% | 6.425% | $5195.28 |"}
+      ]
+    },
+    {
+      "topic": "15-year (15 year) fixed mortgage (home loan) rate and APR",
+      "values": ["5.500%", "5.623%", "6.75%", "6.88%"],
+      "resolution": "6.75% (6.88% APR)",
+      "reason": "The rate sheet (effective 09/25/2026) is current; the homebuying guidance page still shows the 04/22/2026 rates.",
+      "confidence": 0.7,
+      "keys": [["mortgage_purchase", "rate"]],
+      "sources": [
+        {"url": "https://www.dupaco.com/homebuying-guidance", "snapshot_id": "05_2026-09-28_latest", "value": "5.500%", "quote": "| Purchase: 15-Year Fixed Conventional | 5.500% | 0.00% | 5.623% | $1225.63 |"},
+        {"url": "https://www.dupaco.com/homebuying-guidance", "snapshot_id": "05_2026-09-28_latest", "value": "5.623%", "quote": "| Purchase: 15-Year Fixed Conventional | 5.500% | 0.00% | 5.623% | $1225.63 |"},
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "05_2026-09-28_latest", "value": "6.75%", "quote": "| Purchase: 15-Year Fixed Conventional | 6.75% | 0 | 6.88% | $1,327.36 |"},
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "05_2026-09-28_latest", "value": "6.88%", "quote": "| Purchase: 15-Year Fixed Conventional | 6.75% | 0 | 6.88% | $1,327.36 |"}
+      ]
+    },
+    {
+      "topic": "Platinum Visa purchase APR (platinum, visa, credit card)",
+      "values": ["13.00%", "12.50%"],
+      "resolution": "12.50%",
+      "reason": "The rate sheet (effective 1/1/2026) and the card page's own rate line show 12.50%-19.50% APR; the card page's fine print still gave the standard APR effective 10/1/2025 as 13.00%-20.00% (crawls 01-03).",
+      "confidence": 0.6,
+      "keys": [["platinum_visa", "apr"]],
+      "sources": [
+        {"url": "https://www.dupaco.com/personal/credit-cards", "snapshot_id": "03_2026-06-09_recrawl", "value": "13.00%", "quote": "The 2.90% introductory annual percentage rate (APR) expires six months from the date of your first balance transfer, at which time the APR will revert back to the current standard APR, which effective 10/1/2025 is a variable rate from 13.00% APR to 20.00% APR based on your creditworthiness."},
+        {"url": "https://www.dupaco.com/personal/credit-cards", "snapshot_id": "03_2026-06-09_recrawl", "value": "12.50%", "quote": "- APR2: 12.50%–19.50%"},
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "03_2026-06-09_recrawl", "value": "12.50%", "quote": "| Platinum Visa Rate | 12.50% - 19.50% APR1 |"}
+      ]
+    },
+    {
+      "topic": "20-year (20 year) fixed mortgage (home loan) APR",
+      "values": ["6.005%", "7.26%"],
+      "resolution": "7.26%",
+      "reason": "The rate sheet (effective 09/25/2026) is current; the homebuying guidance page still shows the 04/22/2026 rates.",
+      "confidence": 0.55,
+      "keys": [["mortgage_purchase", "apr"]],
+      "sources": [
+        {"url": "https://www.dupaco.com/homebuying-guidance", "snapshot_id": "05_2026-09-28_latest", "value": "6.005%", "quote": "| Purchase: 20-Year Fixed Conventional | 5.875% | 0.00% | 6.005% | $1063.86 |"},
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "05_2026-09-28_latest", "value": "7.26%", "quote": "| Purchase: 20-Year Fixed Conventional | 7.13% | 0 | 7.26% | $1,174.23 |"}
+      ]
+    },
+    {
+      "topic": "2017-2020 model years 60-month (60 month) auto loan APR",
+      "values": ["6.29%", "6.34%"],
+      "resolution": "6.34%",
+      "reason": "The rate sheet (effective 08/31/2026) is current; the vehicle-affordability calculator and the switch-and-earn page still show the 01/01/2026 table.",
+      "confidence": 0.5,
+      "keys": [["auto_loan", "apr"]],
+      "sources": [
+        {"url": "https://www.dupaco.com/calculators/vehicle-affordability", "snapshot_id": "05_2026-09-28_latest", "value": "6.29%", "quote": "| 2017-20 Model Year | 60 Months | 6.29% APR |"},
+        {"url": "https://www.dupaco.com/switch-and-earn", "snapshot_id": "05_2026-09-28_latest", "value": "6.29%", "quote": "| 2017-20 Model Year | 60 Months | 6.29% APR |"},
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "05_2026-09-28_latest", "value": "6.34%", "quote": "| 2017-20 Model Year | 60 Months | 6.34% APR1 |"}
+      ]
+    },
+    {
+      "topic": "2017-2020 model years 72-month (72 month) auto loan APR",
+      "values": ["6.44%", "6.49%"],
+      "resolution": "6.49%",
+      "reason": "The rate sheet (effective 08/31/2026) is current; the vehicle-affordability calculator and the switch-and-earn page still show the 01/01/2026 table.",
+      "confidence": 0.5,
+      "keys": [["auto_loan", "apr"]],
+      "sources": [
+        {"url": "https://www.dupaco.com/calculators/vehicle-affordability", "snapshot_id": "05_2026-09-28_latest", "value": "6.44%", "quote": "| 2017-20 Model Year | 72 Months | 6.44% APR |"},
+        {"url": "https://www.dupaco.com/switch-and-earn", "snapshot_id": "05_2026-09-28_latest", "value": "6.44%", "quote": "| 2017-20 Model Year | 72 Months | 6.44% APR |"},
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "05_2026-09-28_latest", "value": "6.49%", "quote": "| 2017-20 Model Year | 72 Months | 6.49% APR1 |"}
+      ]
+    },
+    {
+      "topic": "2016 and older model years 48-month (48 month) auto loan APR",
+      "values": ["8.54%", "8.59%"],
+      "resolution": "8.59%",
+      "reason": "The rate sheet (effective 08/31/2026) is current; the vehicle-affordability calculator and the switch-and-earn page still show the 01/01/2026 table.",
+      "confidence": 0.5,
+      "keys": [["auto_loan", "apr"]],
+      "sources": [
+        {"url": "https://www.dupaco.com/calculators/vehicle-affordability", "snapshot_id": "05_2026-09-28_latest", "value": "8.54%", "quote": "| 2016 Model Year (and older) | 48 Months | 8.54% APR |"},
+        {"url": "https://www.dupaco.com/switch-and-earn", "snapshot_id": "05_2026-09-28_latest", "value": "8.54%", "quote": "| 2016 Model Year (and older) | 48 Months | 8.54% APR |"},
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "05_2026-09-28_latest", "value": "8.59%", "quote": "| 2016 Model Year (and older) | 48 Months | 8.59% APR1 |"}
+      ]
+    },
+    {
+      "topic": "number of employees (employees, staff)",
+      "values": ["over 600 employees", "over 650 employees", "nearly 700 employees"],
+      "resolution": "over 600 employees",
+      "reason": "The newest press release (May 5, 2026) says over 600 employees; over 650 (June 18, 2024) and nearly 700 (October 2, 2024) come from the About Dupaco text of older releases.",
+      "confidence": 0.45,
+      "keys": [["employee_count", "count"]],
+      "sources": [
+        {"url": "https://www.dupaco.com/newsroom/dupaco-helping-homebuyers-navigate-todays-market", "snapshot_id": "05_2026-09-28_latest", "value": "over 600 employees", "quote": "It has over 600 employees and 22 branch office locations."},
+        {"url": "https://www.dupaco.com/newsroom/forbes-ranks-dupaco-as-a-top-credit-union-in-america-3", "snapshot_id": "05_2026-09-28_latest", "value": "over 650 employees", "quote": "It has over 650 employees and 24 branch office locations."},
+        {"url": "https://www.dupaco.com/newsroom/dupaco-recognized-as-a-bike-friendly-business-by-the-league-of-american-bicyclists", "snapshot_id": "05_2026-09-28_latest", "value": "nearly 700 employees", "quote": "It has nearly 700 employees and 23 branch office locations."}
+      ]
+    },
+    {
+      "topic": "number of counties served (counties, county)",
+      "values": ["118 counties", "112 counties", "108 counties"],
+      "resolution": "118 counties",
+      "reason": "The newest press release (May 5, 2026) says 118 counties; 112 (May 19, 2022) and 108 (September 23, 2021) come from the About Dupaco text of older releases.",
+      "confidence": 0.45,
+      "keys": [["county_count", "count"]],
+      "sources": [
+        {"url": "https://www.dupaco.com/newsroom/dupaco-helping-homebuyers-navigate-todays-market", "snapshot_id": "05_2026-09-28_latest", "value": "118 counties", "quote": "Dupaco serves residents in 118 counties throughout Iowa, northwest Illinois and southwest Wisconsin."},
+        {"url": "https://www.dupaco.com/newsroom/dupaco-celebrates-completion-of-dupaco-voices-building-with-ribbon-cutting", "snapshot_id": "05_2026-09-28_latest", "value": "112 counties", "quote": "Dupaco serves residents in 112 counties throughout Iowa, northwest Illinois and southwest Wisconsin."},
+        {"url": "https://www.dupaco.com/newsroom/dupaco-celebrates-completion-of-newest-learning-lab", "snapshot_id": "05_2026-09-28_latest", "value": "108 counties", "quote": "Dupaco serves residents in 108 counties throughout Iowa, northwest Illinois and southwest Wisconsin."}
+      ]
+    },
+    {
+      "topic": "total assets (assets, billion)",
+      "values": ["$3.6 billion", "$3.5 billion"],
+      "resolution": "$3.6 billion",
+      "reason": "The newest press release (May 5, 2026) says assets exceed $3.6 billion; $3.5 billion comes from the About Dupaco text of an older release (March 10, 2026).",
+      "confidence": 0.45,
+      "keys": [["total_assets", "count"]],
+      "sources": [
+        {"url": "https://www.dupaco.com/newsroom/dupaco-helping-homebuyers-navigate-todays-market", "snapshot_id": "05_2026-09-28_latest", "value": "$3.6 billion", "quote": "Founded in 1948 by ten Dubuque Packing Company employees, membership has grown to more than 179,000 with assets exceeding $3.6 billion."},
+        {"url": "https://www.dupaco.com/newsroom/dupaco-warns-consumers-about-new-wave-of-irs-impersonation-scams", "snapshot_id": "05_2026-09-28_latest", "value": "$3.6 billion", "quote": "Founded in 1948 by ten Dubuque Packing Company employees, membership has grown to more than 180,000 with assets exceeding $3.6 billion."},
+        {"url": "https://www.dupaco.com/newsroom/as-financial-stress-peaks-dupaco-delivers-millions-of-personalized-money-insights", "snapshot_id": "05_2026-09-28_latest", "value": "$3.5 billion", "quote": "Founded in 1948 by ten Dubuque Packing Company employees, membership has grown to more than 178,000 with assets exceeding $3.5 billion."}
+      ]
+    },
+    {
+      "topic": "10-month (10 month) fixed jumbo certificate special APY (CD)",
+      "values": ["3.90%", "4.00%"],
+      "resolution": "4.00%",
+      "reason": "The rate sheet changed between crawls: the August 27, 2026 crawl showed 3.90% and the September 28, 2026 crawl shows 4.00% (effective 09/01/2026).",
+      "confidence": 0.45,
+      "keys": [["cert_special", "apy"]],
+      "sources": [
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "04_2026-08-27_rebaseline", "value": "3.90%", "quote": "| 10 Month Fixed Jumbo Certificate Special | 3.86% | 3.90%1 | $100,000 |"},
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "05_2026-09-28_latest", "value": "4.00%", "quote": "| 10 Month Fixed Jumbo Certificate Special | 3.96% | 4.00%1 | $100,000.00 |"}
+      ]
+    },
+    {
+      "topic": "10-month (10 month) regular certificate special APY (CD)",
+      "values": ["3.80%", "3.90%"],
+      "resolution": "3.90%",
+      "reason": "The rate sheet changed between crawls: 3.80% in the August 27, 2026 crawl and 3.90% (effective 09/01/2026) in the September 28, 2026 crawl.",
+      "confidence": 0.44,
+      "keys": [["cert_special", "apy"]],
+      "sources": [
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "04_2026-08-27_rebaseline", "value": "3.80%", "quote": "| 10 Month Fixed Certificate Special | 3.76% | 3.80%2 | $1,000 |"},
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "05_2026-09-28_latest", "value": "3.90%", "quote": "| 10 Month Fixed Certificate Special | 3.86% | 3.90%2 | $1,000.00 |"}
+      ]
+    },
+    {
+      "topic": "17-month (17 month) jumbo certificate special APY (CD)",
+      "values": ["4.05%", "4.20%"],
+      "resolution": "4.20%",
+      "reason": "The rate sheet changed between crawls: 4.05% in the August 27, 2026 crawl and 4.20% (effective 09/01/2026) in the September 28, 2026 crawl.",
+      "confidence": 0.42,
+      "keys": [["cert_special", "apy"]],
+      "sources": [
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "04_2026-08-27_rebaseline", "value": "4.05%", "quote": "| 17 Month Fixed Jumbo Certificate Special | 4.01% | 4.05%1 | $100,000 |"},
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "05_2026-09-28_latest", "value": "4.20%", "quote": "| 17 Month Fixed Jumbo Certificate Special | 4.15% | 4.20%1 | $100,000.00 |"}
+      ]
+    },
+    {
+      "topic": "17-month (17 month) fixed certificate special APY (CD)",
+      "values": ["3.85%", "3.95%", "4.10%"],
+      "resolution": "4.10%",
+      "reason": "The rate sheet changed between crawls: 3.85% in the June 9, 2026 crawl, 3.95% in the August 27, 2026 crawl and 4.10% (effective 09/01/2026) in the September 28, 2026 crawl.",
+      "confidence": 0.4,
+      "keys": [["cert_special", "apy"]],
+      "sources": [
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "03_2026-06-09_recrawl", "value": "3.85%", "quote": "| 17 Month Fixed Certificate Special | 3.81% | 3.85%2 | $1,000 |"},
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "04_2026-08-27_rebaseline", "value": "3.95%", "quote": "| 17 Month Fixed Certificate Special | 3.91% | 3.95%2 | $1,000 |"},
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "05_2026-09-28_latest", "value": "4.10%", "quote": "| 17 Month Fixed Certificate Special | 4.06% | 4.10%2 | $1,000.00 |"}
+      ]
+    },
+    {
+      "topic": "12-month (12 month) regular certificate APY (CD)",
+      "values": ["2.90%", "3.40%"],
+      "resolution": "3.40%",
+      "reason": "The rate sheet changed between crawls: 2.90% in the May 2026 crawls and 3.40% (effective 06/02/2026) from the June 9, 2026 crawl on.",
+      "confidence": 0.4,
+      "keys": [["cert_regular", "apy"]],
+      "sources": [
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "02_2026-05-19_recrawl", "value": "2.90%", "quote": "| 12 Month | 2.88% | 2.90% | $1,000 |"},
+        {"url": "https://www.dupaco.com/rates", "snapshot_id": "05_2026-09-28_latest", "value": "3.40%", "quote": "| 12 Month | 3.37% | 3.40%1 | $1,000.00 |"}
+      ]
+    }
+  ]
+}

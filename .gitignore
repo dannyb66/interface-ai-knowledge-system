@@ -1,0 +1,25 @@
+# Supplied website data and attachments stay local, including symlinks.
+/snapshots
+/snapshots_zip
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.pdf
+
+# Credentials and local environments.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.venv/
+venv/
+
+# Generated output and caches.
+results/*
+!results/baseline.json
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.DS_Store

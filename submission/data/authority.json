@@ -1,0 +1,17 @@
+{
+  "_version": "2026-11-04 authority v1",
+  "classes": {
+    "rate_sheet": 3,
+    "product_page": 3,
+    "contact": 1,
+    "newsroom": 1,
+    "calculator": 1,
+    "landing_promo": 1,
+    "about": 1,
+    "blog": 0,
+    "business_resource": 0,
+    "pdf": 0,
+    "legacy_alias": 0,
+    "listing": 0
+  }
+}

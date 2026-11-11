@@ -1,0 +1,104 @@
+{
+"rule": "Rate-fact changes between downloads count even without a stale copy; non-rate changes (the hardship grant, $2,000 to $3,500) do not.",
+"gc-01": [
+  {"value": "5.19%", "page": "/rates", "crawl": "04_2026-08-27_rebaseline", "line": 269},
+  {"value": "5.34%", "page": "/calculators/vehicle-affordability", "crawl": "05_2026-09-28_latest", "line": 112},
+  {"value": "5.39%", "page": "/rates", "crawl": "05_2026-09-28_latest", "line": 261}
+],
+"gc-02": [
+  {"value": "2.50%", "page": "/rates", "crawl": "05_2026-09-28_latest", "line": 245},
+  {"value": "3.00%", "page": "/checking-offer-lp", "crawl": "05_2026-09-28_latest", "line": 91}
+],
+"gc-03": [
+  {"value": "6.000%", "page": "/homebuying-guidance", "crawl": "05_2026-09-28_latest", "line": 52},
+  {"value": "6.125%", "page": "/rates", "crawl": "01_2026-05-12_baseline", "line": 872},
+  {"value": "7.25%", "page": "/rates", "crawl": "05_2026-09-28_latest", "line": 316}
+],
+"gc-04": [
+  {"value": "6.000%", "page": "/mortgage-refi", "crawl": "05_2026-09-28_latest", "line": 51},
+  {"value": "6.125%", "page": "/rates", "crawl": "01_2026-05-12_baseline", "line": 929},
+  {"value": "6.375%", "page": "/rates", "crawl": "01_2026-05-12_baseline", "line": 1080},
+  {"value": "7.25%", "page": "/rates", "crawl": "05_2026-09-28_latest", "line": 333}
+],
+"gc-05": [
+  {"value": "4.967%", "page": "/newsroom/dupaco-expands-access-to-affordable-homeownership-through-fhlb-partnership", "crawl": "05_2026-09-28_latest", "line": 16},
+  {"value": "5.196%", "page": "/rates", "crawl": "03_2026-06-09_recrawl", "line": 337},
+  {"value": "5.210%", "page": "/newsroom/dreams-within-reach-dupaco-provides-permanent-rate-reduction-with-mortgage-rate-relief-program", "crawl": "05_2026-09-28_latest", "line": 20}
+],
+"gc-06": [
+  {"value": "3.90%", "page": "/rates", "crawl": "04_2026-08-27_rebaseline", "line": 156},
+  {"value": "4.00%", "page": "/rates", "crawl": "05_2026-09-28_latest", "line": 115}
+],
+"gc-07": [
+  {"value": "3.80%", "page": "/rates", "crawl": "04_2026-08-27_rebaseline", "line": 157},
+  {"value": "3.90%", "page": "/rates", "crawl": "05_2026-09-28_latest", "line": 116}
+],
+"gc-08": [
+  {"value": "3.95%", "page": "/rates", "crawl": "03_2026-06-09_recrawl", "line": 112},
+  {"value": "4.05%", "page": "/rates", "crawl": "04_2026-08-27_rebaseline", "line": 158},
+  {"value": "4.20%", "page": "/rates", "crawl": "05_2026-09-28_latest", "line": 113}
+],
+"gc-09": [
+  {"value": "3.85%", "page": "/rates", "crawl": "03_2026-06-09_recrawl", "line": 113},
+  {"value": "3.95%", "page": "/rates", "crawl": "04_2026-08-27_rebaseline", "line": 159},
+  {"value": "4.10%", "page": "/rates", "crawl": "05_2026-09-28_latest", "line": 114}
+],
+"gc-10": [
+  {"value": "2.90%", "page": "/rates", "crawl": "02_2026-05-19_recrawl", "line": 340},
+  {"value": "3.40%", "page": "/rates", "crawl": "05_2026-09-28_latest", "line": 136}
+],
+"gc-11": [
+  {"value": "12.50%", "page": "/rates", "crawl": "03_2026-06-09_recrawl", "line": 274},
+  {"value": "13.00%", "page": "/personal/credit-cards", "crawl": "03_2026-06-09_recrawl", "line": 183}
+],
+"gc-12": [
+  {"value": "18 branches", "page": "/about", "crawl": "05_2026-09-28_latest", "line": 113},
+  {"value": "22 branch office locations", "page": "/newsroom/dupaco-helping-homebuyers-navigate-todays-market", "crawl": "05_2026-09-28_latest", "line": 38},
+  {"value": "23 branch office locations", "page": "/newsroom/dupaco-warns-consumers-about-new-wave-of-irs-impersonation-scams", "crawl": "05_2026-09-28_latest", "line": 46},
+  {"value": "24 branch office locations", "page": "/newsroom/forbes-ranks-dupaco-as-a-top-credit-union-in-america-3", "crawl": "05_2026-09-28_latest", "line": 32}
+],
+"gc-13": [
+  {"value": "600 employees", "page": "/newsroom/dupaco-helping-homebuyers-navigate-todays-market", "crawl": "05_2026-09-28_latest", "line": 38},
+  {"value": "650 employees", "page": "/newsroom/forbes-ranks-dupaco-as-a-top-credit-union-in-america-3", "crawl": "05_2026-09-28_latest", "line": 32},
+  {"value": "700 employees", "page": "/newsroom/dupaco-recognized-as-a-bike-friendly-business-by-the-league-of-american-bicyclists", "crawl": "05_2026-09-28_latest", "line": 26}
+],
+"gc-14": [
+  {"value": "$3.3 billion", "page": "/newsroom/forbes-ranks-dupaco-as-a-top-credit-union-in-america-3", "crawl": "05_2026-09-28_latest", "line": 32},
+  {"value": "$3.6 billion", "page": "/newsroom/dupaco-helping-homebuyers-navigate-todays-market", "crawl": "05_2026-09-28_latest", "line": 38}
+],
+"gc-15": [
+  {"value": "108 counties", "page": "/newsroom/dupaco-celebrates-completion-of-newest-learning-lab", "crawl": "05_2026-09-28_latest", "line": 59},
+  {"value": "112 counties", "page": "/newsroom/dupaco-voices-building-honored-for-excellence-in-historic-preservation", "crawl": "05_2026-09-28_latest", "line": 34},
+  {"value": "118 counties", "page": "/newsroom/dupaco-helping-homebuyers-navigate-todays-market", "crawl": "05_2026-09-28_latest", "line": 38}
+],
+"gc-16": [
+  {"value": "fourth time", "page": "/newsroom/forbes-ranks-dupaco-as-a-top-credit-union-in-america-2", "crawl": "05_2026-09-28_latest", "line": 12},
+  {"value": "fifth time", "page": "/newsroom/forbes-ranks-dupaco-as-a-top-credit-union-in-america-3", "crawl": "05_2026-09-28_latest", "line": 12}
+],
+"gc-17": [
+  {"value": "fifth consecutive year", "page": "/newsroom/dupaco-declares-4-5-million-bonus-dividend", "crawl": "05_2026-09-28_latest", "line": 16},
+  {"value": "sixth consecutive year", "page": "/newsroom/dupaco-declares-more-than-3-7-million-bonus-dividend", "crawl": "05_2026-09-28_latest", "line": 16},
+  {"value": "seventh consecutive year", "page": "/newsroom/dupaco-shares-nearly-3-7-million-with-participating-members", "crawl": "05_2026-09-28_latest", "line": 16},
+  {"value": "eighth consecutive year", "page": "/newsroom/dupaco-shares-more-than-3-3-million-with-participating-members", "crawl": "05_2026-09-28_latest", "line": 16}
+],
+"gc-18": [
+  {"value": "6.29%", "page": "/calculators/vehicle-affordability", "crawl": "05_2026-09-28_latest", "line": 118},
+  {"value": "6.34%", "page": "/rates", "crawl": "05_2026-09-28_latest", "line": 267}
+],
+"gc-19": [
+  {"value": "6.44%", "page": "/calculators/vehicle-affordability", "crawl": "05_2026-09-28_latest", "line": 119},
+  {"value": "6.49%", "page": "/rates", "crawl": "05_2026-09-28_latest", "line": 268}
+],
+"gc-20": [
+  {"value": "8.54%", "page": "/calculators/vehicle-affordability", "crawl": "05_2026-09-28_latest", "line": 120},
+  {"value": "8.59%", "page": "/rates", "crawl": "05_2026-09-28_latest", "line": 269}
+],
+"gc-21": [
+  {"value": "5.44%", "page": "/calculators/vehicle-affordability", "crawl": "05_2026-09-28_latest", "line": 113},
+  {"value": "5.49%", "page": "/rates", "crawl": "05_2026-09-28_latest", "line": 262}
+],
+"gc-22": [
+  {"value": "5.54%", "page": "/calculators/vehicle-affordability", "crawl": "05_2026-09-28_latest", "line": 114},
+  {"value": "5.59%", "page": "/rates", "crawl": "05_2026-09-28_latest", "line": 263}
+]
+}
