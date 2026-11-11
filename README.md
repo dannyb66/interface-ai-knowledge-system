@@ -11,24 +11,37 @@ API keys, model downloads or network access.
 
 ## Run the public evaluation
 
-The supplied website snapshots are deliberately excluded from this public repository. Obtain the participant
-kit from interface.ai and copy its five snapshot ZIP files into `snapshots_zip/` at the repository root. This
-directory and extracted `snapshots/` are ignored by Git. The first harness run unpacks the archives locally.
+Use a clean **Python 3.11** environment with `python` available on your PATH. No API keys, external services,
+model downloads or third-party runtime packages are needed.
 
-From the repository root with Python 3.11:
+1. Clone this repository:
 
-```bash
-mkdir -p snapshots_zip
-cp /path/to/participant-kit/snapshots_zip/*.zip snapshots_zip/
-python3.11 -m venv .venv
-. .venv/bin/activate
-python -m pip install -r submission/requirements.txt
-python harness/run_eval.py --submission submission --eval eval/public_eval.jsonl
-```
+   ```bash
+   git clone https://github.com/dannyb66/interface-ai-knowledge-system.git
+   cd interface-ai-knowledge-system
+   ```
 
-`submission/requirements.txt` intentionally lists no packages. The harness writes `results/report.json` and
-`results/per_question.jsonl`. Python 3.9 compatibility is also checked. If the kit is already extracted, placing
-its five crawl folders in `snapshots/` also supports the direct command.
+2. Obtain the participant kit from interface.ai. Place its five snapshot ZIP files in `snapshots_zip/` at the
+   repository root. If they are already extracted, place the five crawl folders in `snapshots/` instead.
+   The supplied data is excluded from Git because the assignment prohibits redistribution.
+
+3. From the repository root, install the declared requirements and run the assignment command:
+
+   ```bash
+   python -m pip install -r submission/requirements.txt
+   python harness/run_eval.py --submission submission --eval eval/public_eval.jsonl
+   ```
+
+The harness automatically unpacks the ZIPs on the first run. `submission/requirements.txt` intentionally lists
+no packages. A virtual environment is optional; create one using your platform's usual Python tools if needed.
+The harness writes `results/report.json` and `results/per_question.jsonl`. Python 3.9 compatibility is also checked.
+
+Organizers can instead copy the entire `submission/` folder into the top folder of their existing participant
+kit and run the same command with their own `harness/`, `eval/` and snapshot data. In the PDF's command,
+`<your folder>` means `submission` for this solution.
+
+If the command reports `FileNotFoundError: ... 'snapshots'`, check that `snapshots_zip/` contains the five supplied
+ZIPs or `snapshots/` contains their extracted crawl folders. A source-only clone does not include the dataset.
 
 ## Approach
 

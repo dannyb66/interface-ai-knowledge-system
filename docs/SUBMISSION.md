@@ -17,21 +17,27 @@ deadline**; submit when the work represents your best effort. Public read access
 
 ## Clean Python 3.11 run
 
-Clone this public repository and check out the full commit in the submission email. Obtain the supplied kit
-from interface.ai; the website data is not part of this repository. Copy its five ZIPs into the ignored local
-`snapshots_zip/` folder, then run the exact assignment command:
+Use a clean Python 3.11 environment where `python` selects that interpreter. Clone this public repository and
+check out the full commit in the submission email:
 
 ```bash
 git clone https://github.com/dannyb66/interface-ai-knowledge-system.git
 cd interface-ai-knowledge-system
 # git checkout --detach <full-commit-from-the-submission-email>
-mkdir -p snapshots_zip
-cp /path/to/participant-kit/snapshots_zip/*.zip snapshots_zip/
-python3.11 -m venv .venv
-. .venv/bin/activate
+```
+
+Obtain the participant kit from interface.ai. Place its five ZIPs in `snapshots_zip/` at the repository root,
+or place its five extracted crawl folders in `snapshots/`. The website data is supplied separately and is not
+part of this public repository. From the repository root, run:
+
+```bash
 python -m pip install -r submission/requirements.txt
 python harness/run_eval.py --submission submission --eval eval/public_eval.jsonl
 ```
+
+No custom setup script, machine-specific path or bundled virtual environment is required. Organizers may
+instead copy the entire `submission/` folder into their existing participant kit and run the same command
+with their own scorer and data. The PDF's `<your folder>` placeholder is `submission` for this repository.
 
 The unchanged harness unpacks the ZIPs into `snapshots/`, ingests all five crawls oldest first and evaluates
 `build()`, `answer()` and `conflicts()`. Reports go under ignored `results/`. No generated local index, API key
