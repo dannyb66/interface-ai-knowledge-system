@@ -11,20 +11,23 @@ API keys, model downloads or network access.
 
 ## Run the public evaluation
 
-The supplied website snapshots are deliberately excluded from this public repository. Obtain the participant
-kit from interface.ai and copy its five snapshot ZIP files into `snapshots_zip/` at the repository root. This
-directory and extracted `snapshots/` are ignored by Git. The first harness run unpacks the archives locally.
+The supplied website snapshots are deliberately excluded from this public repository: the assignment says
+not to redistribute them. A fresh clone needs the separately supplied participant kit before evaluation.
+The setup script copies its five snapshot ZIPs into ignored `snapshots_zip/` and creates a local Python 3.11
+environment. The first harness run unpacks the archives into ignored `snapshots/`.
 
 From the repository root with Python 3.11:
 
 ```bash
-mkdir -p snapshots_zip
-cp /path/to/participant-kit/snapshots_zip/*.zip snapshots_zip/
-python3.11 -m venv .venv
+python3.11 scripts/setup_local.py --kit /path/to/hackathon-knowledge-kit-participant.zip
 . .venv/bin/activate
-python -m pip install -r submission/requirements.txt
 python harness/run_eval.py --submission submission --eval eval/public_eval.jsonl
 ```
+
+If the participant ZIP is in `~/Downloads/` under its original name, omit `--kit` and its path.
+Setup works offline, checks all five archives, and refuses to overwrite different existing archives. Do not
+commit `.venv/`: virtual environments are created for each machine. For an already extracted kit, copying
+`snapshots_zip/*.zip` into this checkout and creating a Python 3.11 environment manually also works.
 
 `submission/requirements.txt` intentionally lists no packages. The harness writes `results/report.json` and
 `results/per_question.jsonl`. Python 3.9 compatibility is also checked. If the kit is already extracted, placing
@@ -46,7 +49,8 @@ ordering make replay deterministic. The runtime does not read evaluation labels.
 The verified Phase 3 runtime scores **0.9690 public**, **1.0000 dev** and **1.0000 generated proxy**, with zero
 errors or stale-trap hits. All 238 curated prose source references and 22 curated conflicts verify. Description
 or eligibility facts cover 41 of 44 eligible products; all 50 dollar-priced fee rows are extracted per crawl.
-The public export passes **525 tests**, including three checks for missing or invalid local kit input.
+The public export passes **531 tests**, including checks for missing or invalid local kit input and safe,
+repeatable setup from the participant ZIP.
 
 Independent results reveal remaining limits: blind holdout QA is **0.9647**, with description **0.4095** and
 eligibility **0.6667**; the broader locked set remains **0.0933**. These local results do not establish the
