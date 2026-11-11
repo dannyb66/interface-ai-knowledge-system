@@ -17,23 +17,27 @@ deadline**; submit when the work represents your best effort. Public read access
 
 ## Clean Python 3.11 run
 
-Clone this public repository and check out the full commit in the submission email. Obtain the supplied kit
-from interface.ai; the website data is not part of this repository. Run the local setup script to copy the
-five snapshot ZIPs and create a Python 3.11 environment, then run the exact assignment command:
+Use a clean Python 3.11 environment where `python` selects that interpreter. Clone this public repository and
+check out the full commit in the submission email:
 
 ```bash
 git clone https://github.com/dannyb66/interface-ai-knowledge-system.git
 cd interface-ai-knowledge-system
 # git checkout --detach <full-commit-from-the-submission-email>
-python3.11 scripts/setup_local.py --kit /path/to/hackathon-knowledge-kit-participant.zip
-. .venv/bin/activate
+```
+
+Obtain the participant kit from interface.ai. Place its five ZIPs in `snapshots_zip/` at the repository root,
+or place its five extracted crawl folders in `snapshots/`. The website data is supplied separately and is not
+part of this public repository. From the repository root, run:
+
+```bash
+python -m pip install -r submission/requirements.txt
 python harness/run_eval.py --submission submission --eval eval/public_eval.jsonl
 ```
 
-`--kit` defaults to `~/Downloads/hackathon-knowledge-kit-participant.zip`. The setup uses only the standard
-library, installs runtime requirements offline, validates the five archives and leaves different existing
-archives untouched. The kit and `.venv/` remain local and ignored. A clone without the supplied data cannot
-run the evaluation; the setup step is how reviewers provide that data without redistributing it through Git.
+No custom setup script, machine-specific path or bundled virtual environment is required. Organizers may
+instead copy the entire `submission/` folder into their existing participant kit and run the same command
+with their own scorer and data. The PDF's `<your folder>` placeholder is `submission` for this repository.
 
 The unchanged harness unpacks the ZIPs into `snapshots/`, ingests all five crawls oldest first and evaluates
 `build()`, `answer()` and `conflicts()`. Reports go under ignored `results/`. No generated local index, API key

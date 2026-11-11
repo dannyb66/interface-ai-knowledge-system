@@ -11,27 +11,37 @@ API keys, model downloads or network access.
 
 ## Run the public evaluation
 
-The supplied website snapshots are deliberately excluded from this public repository: the assignment says
-not to redistribute them. A fresh clone needs the separately supplied participant kit before evaluation.
-The setup script copies its five snapshot ZIPs into ignored `snapshots_zip/` and creates a local Python 3.11
-environment. The first harness run unpacks the archives into ignored `snapshots/`.
+Use a clean **Python 3.11** environment with `python` available on your PATH. No API keys, external services,
+model downloads or third-party runtime packages are needed.
 
-From the repository root with Python 3.11:
+1. Clone this repository:
 
-```bash
-python3.11 scripts/setup_local.py --kit /path/to/hackathon-knowledge-kit-participant.zip
-. .venv/bin/activate
-python harness/run_eval.py --submission submission --eval eval/public_eval.jsonl
-```
+   ```bash
+   git clone https://github.com/dannyb66/interface-ai-knowledge-system.git
+   cd interface-ai-knowledge-system
+   ```
 
-If the participant ZIP is in `~/Downloads/` under its original name, omit `--kit` and its path.
-Setup works offline, checks all five archives, and refuses to overwrite different existing archives. Do not
-commit `.venv/`: virtual environments are created for each machine. For an already extracted kit, copying
-`snapshots_zip/*.zip` into this checkout and creating a Python 3.11 environment manually also works.
+2. Obtain the participant kit from interface.ai. Place its five snapshot ZIP files in `snapshots_zip/` at the
+   repository root. If they are already extracted, place the five crawl folders in `snapshots/` instead.
+   The supplied data is excluded from Git because the assignment prohibits redistribution.
 
-`submission/requirements.txt` intentionally lists no packages. The harness writes `results/report.json` and
-`results/per_question.jsonl`. Python 3.9 compatibility is also checked. If the kit is already extracted, placing
-its five crawl folders in `snapshots/` also supports the direct command.
+3. From the repository root, install the declared requirements and run the assignment command:
+
+   ```bash
+   python -m pip install -r submission/requirements.txt
+   python harness/run_eval.py --submission submission --eval eval/public_eval.jsonl
+   ```
+
+The harness automatically unpacks the ZIPs on the first run. `submission/requirements.txt` intentionally lists
+no packages. A virtual environment is optional; create one using your platform's usual Python tools if needed.
+The harness writes `results/report.json` and `results/per_question.jsonl`. Python 3.9 compatibility is also checked.
+
+Organizers can instead copy the entire `submission/` folder into the top folder of their existing participant
+kit and run the same command with their own `harness/`, `eval/` and snapshot data. In the PDF's command,
+`<your folder>` means `submission` for this solution.
+
+If the command reports `FileNotFoundError: ... 'snapshots'`, check that `snapshots_zip/` contains the five supplied
+ZIPs or `snapshots/` contains their extracted crawl folders. A source-only clone does not include the dataset.
 
 ## Approach
 
@@ -49,8 +59,7 @@ ordering make replay deterministic. The runtime does not read evaluation labels.
 The verified Phase 3 runtime scores **0.9690 public**, **1.0000 dev** and **1.0000 generated proxy**, with zero
 errors or stale-trap hits. All 238 curated prose source references and 22 curated conflicts verify. Description
 or eligibility facts cover 41 of 44 eligible products; all 50 dollar-priced fee rows are extracted per crawl.
-The public export passes **531 tests**, including checks for missing or invalid local kit input and safe,
-repeatable setup from the participant ZIP.
+The public export passes **525 tests**, including three checks for missing or invalid local kit input.
 
 Independent results reveal remaining limits: blind holdout QA is **0.9647**, with description **0.4095** and
 eligibility **0.6667**; the broader locked set remains **0.0933**. These local results do not establish the
