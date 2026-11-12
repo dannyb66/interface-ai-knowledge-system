@@ -1,39 +1,45 @@
 # Submission notes
 
-**Entry point and dependencies.** `solution.py` exposes `build()`, returning the `ingest(snapshot)`,
-`answer(question, as_of=None)` and `conflicts()` interface in the supplied `harness/contract.py`. The runtime
-supports Python 3.9+; grading and primary development use Python 3.11. `requirements.txt` intentionally lists
-no packages: the runtime uses the standard library only. No API keys, external services, model downloads or
-live website calls are required. From the repository root, run
-`python harness/run_eval.py --submission submission --eval eval/public_eval.jsonl` after placing the supplied
-kit's ZIPs in the ignored local `snapshots_zip/` directory. The public repository excludes the website snapshots
-and credentials; its curated facts contain only the derived evidence needed for source verification.
+**Interface and dependencies.** `solution.py` exposes `build()`, returning `ingest(snapshot)`,
+`answer(question, as_of=None)` and `conflicts()` as defined by the supplied harness. The runtime targets
+Python 3.9+; grading uses Python 3.11. `requirements.txt` intentionally lists no packages: only the standard
+library is required. API keys: **none**. Runtime operation is offline, without external services, model
+downloads or live website calls. [Reproduction instructions](../docs/SUBMISSION.md) explain exact-commit
+checkout and supplying the participant kit separately.
 
-**Facts and sources.** Ingestion reads only the supplied snapshots, oldest first. Rules extract rates, tiers,
-contact details, dated articles and fees into a typed fact store joined to a product registry. Curated prose and
-conflict entries are admitted only when their quotes and metadata verify against the listed crawl pages.
-Answers cite the winning facts' sources; `conflicts()` reports the verified competing values, sources and
-resolution. The system does not read evaluation labels at runtime.
+**Source-backed approach.** Ingestion processes the supplied snapshots oldest first. Rules extract rates,
+tiers, contact details, dated articles and fees into a typed fact store joined to a product registry. Curated
+prose and conflict entries require matching source quotes and metadata. Source identity preserves the actual
+crawl, raw URL and content hash, including distinct captures at a shared canonical URL. Another capture
+cannot lend a quote or date. Independent source review checks meaning beyond byte matching; the runtime
+does not read evaluation labels.
 
-**What is current and authoritative.** Without a date, the latest supplied crawl is current. An explicit
-`as_of` overrides a date in the question; otherwise the newest crawl on or before the requested date applies.
-Dates before the first crawl use that crawl with an explanatory note; dates after the last use the last crawl.
-Malformed dates are refused. Future-effective facts are excluded. For ordinary facts, rate sheets and product
-pages outrank general pages and low-authority legacy material, then effective date, publication date, fetch
-time and canonical URL break ties. Dated article assertions instead choose the newest publication available
-by the requested cutoff, so a later article cannot leak into a historical answer.
+**Complete conditions.** Eligibility, reviewed procedures and declared description groups must retain every
+required claim through source verification, selection and rendering; otherwise the complete request is
+refused. Conditions preserve AND/OR logic, bounds, units, exclusions and named percentage bases. Conditional
+fees retain their customer/service scope, and a tax footnote must match the fee's source and conditions.
+Compound prose supports eligibility plus service information for one recognized entity only: both resolver
+arms must succeed. Published conditions do not become a personal eligibility decision.
 
-**Tiers and history.** The resolver retains product, segment, term, amount, model year and special/intro flags.
-An asked tier selects its matching row; absent a tier, the answer lists the applicable current tiers in a fixed
-order. Unsupported qualifiers do not borrow another product's value. Historical questions return evidence
-available at their requested date. Change questions compare the requested endpoints or the latest supported
-change; a previous-value request returns the earlier value, and unchanged or withdrawn facts have explicit
-handling.
+**What is current.** Without a date, the latest supplied crawl is current. Explicit `as_of` overrides a date
+in the question; otherwise the newest crawl on or before the requested serving date applies. A publication
+date named as source context selects evidence rather than changing the serving cutoff. Before-first dates use
+the first crawl with an explanation; after-last dates use the last. Malformed dates are refused and
+future-effective facts excluded. Rate sheets and product pages outrank general/legacy material, with dates,
+fetch time and URL breaking ties. Dated assertions use publications available by the cutoff and preserve
+publication or event attribution, so historical statements do not become current promises.
 
-**Refusal and consistency.** Unknown products, unpublished attributes and unsupported dates, branches or
-qualifiers return `confident=False` with a clear contact/refusal sentence and no new unsupported numbers.
-Templates render a resolved answer plan, and numeric checks prevent unsupported values from reaching the
-answer. Fixed ordering and a parsed-query cache make repeated answers deterministic. The catalog is finite:
-unsupported descriptions and fees remain refusals rather than invented claims. Local measurements and their
-scope are recorded in `../results/baseline.json`; the public and development scores are not an official hidden
-evaluation result.
+**Tiers, conflicts and grounding.** Resolution preserves product, segment, term, amount, model year and
+special/intro qualifiers. Requested tiers select matching rows; otherwise applicable tiers appear in a fixed
+order. Loan APR/rate cells explicitly headed “As Low As” retain that bound and table citations, without
+promising an exact personal rate. Conflict notes must match the selected product, attribute, tier/conditions
+and answering date, and include supporting citations. Templates render structured answer plans; numeric
+grounding rejects unsupported values. Fixed ordering and full-query caching keep replay deterministic.
+
+**Limits and release status.** The catalog is finite; unsupported requests return `confident=False` with a
+clear refusal. Both `lexical_routing` and `unknown_topic_routing` remain **False**; routing experiments were
+not adopted. No model builder was activated. Phase 4 remains unpromoted,
+with immutable `submission-v1` as the grading fallback. [Implementation review](../docs/phase4/IMPLEMENTATION_REVIEW.md)
+records experiments and pending gates; [source coverage](../docs/phase4/SOURCE_COVERAGE.md) records gaps, and
+the [evaluation record](../docs/EVALUATION.md) separates historical Phase 3 results from unfinished candidate
+verification. No hidden-evaluation score is claimed.

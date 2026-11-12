@@ -35,6 +35,7 @@ from .normalize import (norm_text, parse_model_years, parse_money, parse_percent
                         strip_footnote)
 from .pagetype import segment_of
 from .registry import Registry
+from .rate_bounds import column_bound
 from .types import ClaimType, Fact, Source, make_key
 
 EXTRACTOR = "rules"
@@ -116,11 +117,11 @@ class SourceContext:
 
 def _fact(ctx: SourceContext, product_id: str, attribute: str, qualifiers: Mapping[str, Any],
           value: Optional[float], value_text: str, unit: str, effective_date: Optional[str],
-          position: Tuple[int, int], quote: str, confidence: float) -> Fact:
+          position: Tuple[int, int], quote: str, confidence: float, rate_bound: Optional[str] = None) -> Fact:
     key = make_key(product_id, attribute, qualifiers)
     claim = ClaimType.RATE if attribute in RATE_ATTRS else ClaimType.ASSERTION
     return Fact(key, product_id, attribute, key[2], value, value_text, unit, claim, effective_date, None, None,
-                ctx.source(position[0], position[1], quote), EXTRACTOR, confidence)
+                ctx.source(position[0], position[1], quote), EXTRACTOR, confidence, rate_bound=rate_bound)
 
 
 def _is_intro(text: str) -> bool:
@@ -207,8 +208,11 @@ def extract_block(block: Block, ctx: SourceContext, registry: Registry) -> List[
             if i < len(header) and _is_intro(header[i]):
                 own["intro"] = True
             value, text, unit = parsed
+            bound = column_bound(kind, header[i] if i < len(header) else "", value, unit)
+            # Preserve an exact contiguous table excerpt: its column header scopes the bounded cell.
+            quote = "\n".join(line for line in block.lines if line.startswith("|")) if bound else row.raw
             facts.append(_fact(ctx, res.product_id, kind, own, value, text, unit, block.effective_date,
-                               (block.idx, row.row_idx), row.raw, TABLE_CONFIDENCE))
+                               (block.idx, row.row_idx), quote, TABLE_CONFIDENCE, bound))
     return facts
 
 

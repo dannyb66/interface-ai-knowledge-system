@@ -3,5 +3,9 @@
   "business_you_name_it_savings|description|Share Savings": "The product page describes Business Share Savings and You-Name-It Savings together. Student-loan questions select their own description and never these facts.",
   "forbes_recognition|description|fourth": "The historical fourth-recognition article is retained for dated questions. Publication-date selection picks the newer fifth-recognition article for current questions; test_forbes_answers_use_latest_publication pins that selection.",
   "vto_users|count|294": "Task 15: the year filter keeps 2024 for dev-020; 294 belongs to 2023.",
-  "branch_count|count|24 branch": "Task 15: publication-date selection keeps the 2024 count only at an earlier date."
+  "branch_count|count|24 branch": "Task 15: publication-date selection keeps the 2024 count only at an earlier date.",
+  "des_moines_register_recognition|description|2021": "Phase4 independent source audit r1 verifies historical Des Moines Register recognition years. This distinct entity cannot answer Forbes questions; test_82_catalog_boundaries pins direct and optional-route isolation.",
+  "sp_global_credit_union_ranking|description|2021": "Phase4 independent source audit r1 verifies the dated S&P Global ranking source. This distinct entity cannot answer Forbes questions; test_82_catalog_boundaries pins direct and optional-route isolation.",
+  "thank_use_patronage|count|2021": "Phase4 independent source audit r1 verifies historical Thank Use patronage. Its dated count belongs to a distinct entity; test_82_catalog_boundaries pins direct and optional-route isolation from Forbes.",
+  "thank_use_patronage|description|2021": "Phase4 independent source audit r1 verifies historical Thank Use patronage. Its dated description belongs to a distinct entity; test_82_catalog_boundaries pins direct and optional-route isolation from Forbes."
 }

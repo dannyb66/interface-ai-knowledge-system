@@ -19,11 +19,12 @@ def test_change_points_print_the_last_change(ks_full):  # gap research #2
     t = ks_full.answer("When was the last change to the 30-year fixed mortgage rate for loans of $100,000 or less?").text
     assert "6.375" in t and "7.13" in t and "5.875" not in t
 
-def test_withdrawn_products_are_no_longer_offered(ks_full):  # gap research #3
+def test_missing_current_rates_do_not_assert_product_discontinuation(ks_full):
     from scoring import REFUSAL_RE, _numbers
     for q in ("What is the APY on the 25-month certificate special?", "What is the HELOC intro rate?"):
         a = ks_full.answer(q)
-        assert a.confident is False and "no longer offered" in a.text and REFUSAL_RE.search(a.text), q
+        assert a.confident is False and "current value" in a.text and REFUSAL_RE.search(a.text), q
+        assert "no longer offered" not in a.text and "does not list" not in a.text, q
         assert _numbers(a.text) <= _numbers(q), q  # no digit absent from the question
     assert "3.60%" in ks_full.answer("What APY did the 25-month certificate special pay in May 2026?").text  # dev-006: inside the window (pin)
     assert "1.99%" in ks_full.answer("What is the HELOC intro rate?", "2026-05-15").text  # (pin)

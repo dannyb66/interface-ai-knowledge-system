@@ -66,6 +66,7 @@ SYNONYMS: Dict[str, Tuple[str, str]] = {
     **_syn("attribute", "points", "points"),
     **_syn("attribute", "payment_example", "monthly payment"),
     **_syn("attribute", "fee", "fee"),
+    **_syn("attribute", "cash_advance", "cash advance", "cash-advance", "cashadvance"),
     **_syn("attribute", "term_months", "term"),
     **_syn("attribute", "eligibility", "eligible", "eligibility", "qualify", "requirement", "who can open",
            "who may open"),
@@ -293,7 +294,7 @@ TIER_SLOTS = ("term_months", "amount", "model_year", "superlative")
 # Share Savings, compounded monthly?", SE4); those of the last only keep a question without another attribute word off
 # the rate ("the lowest APR for the highest credit score" asks the APR). "how long" beside INTRO_WORDS is the marker
 # intro_term (qslots.py).
-RATE_BEATING = ("penalty", "compounding", "frequency", "rewards", "earning_rate", "fax", "email")
+RATE_BEATING = ("cash_advance", "penalty", "compounding", "frequency", "rewards", "earning_rate", "fax", "email")
 ATTR_PRIORITY = RATE_BEATING + ("apy", "dividend_rate", "rate", "apr", "min_to_earn", "min_to_open", "points",
                                 "payment_example", "fee", "term_months", "eligibility",
                  "closing_costs", "down_payment", "credit_limit", "credit_score", "loan_amount", "features", "income",

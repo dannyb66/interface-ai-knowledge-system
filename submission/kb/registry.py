@@ -38,10 +38,11 @@ from typing import Any, Dict, FrozenSet, List, Mapping, Optional, Pattern, Tuple
 
 from .config import DEFAULT_DATA_DIR
 from .normalize import norm_text, parse_model_years, parse_term_months, parse_tier
+from .conditions import CONDITION_VALUES, validate_conditions
 
 QUALIFIERS = frozenset({"term_months", "jumbo", "special", "balance_min", "balance_max", "loan_amount_max",
                         "model_year_min", "model_year_max", "program", "card", "segment", "branch_name", "day",
-                        "intro", "year", "item"})
+                        "intro", "year", "item"}) | frozenset(CONDITION_VALUES)
 SEGMENTS = frozenset({"personal", "business"})
 _BOOLEAN_QUALIFIERS = frozenset({"jumbo", "special", "intro"})
 # Qualifiers every label rule for a product of the family must set (spec section 5, controller ruling 2).
@@ -168,6 +169,7 @@ def _rule(entry: Any, index: int, products: Mapping[str, Mapping[str, Any]]) -> 
     qualifiers = entry["qualifiers"]
     if not isinstance(qualifiers, dict):
         raise ValueError("{}: qualifiers must be an object".format(where))
+    validate_conditions(qualifiers)
     allow_null = entry.get("allow_null", [])
     if not isinstance(allow_null, list) or not all(isinstance(q, str) for q in allow_null):
         raise ValueError("{}: allow_null must be a list of qualifier names".format(where))

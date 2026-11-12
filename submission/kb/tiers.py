@@ -31,6 +31,7 @@ from .extract_rules import TABLE_CONFIDENCE
 from .lexicon import DAYS
 from .question import Query
 from .types import Fact
+from .conditions import select_conditions
 
 _INF = float("inf")
 _RANGES = {"balance": ("balance_min", "balance_max"), "loan_amount": (None, "loan_amount_max"),
@@ -342,9 +343,9 @@ TIER_SELECTORS: Dict[str, Selector] = {"balance": _select_balance, "term": _sele
                                        "segment": _select_segment}
 QUALIFIER_FILTERS: Dict[str, Selector] = {"program": _select_program, "branch_name": _select_branch,
                                           "day": _select_day, "jumbo": _select_jumbo, "special": _select_special,
-                                          "intro": _select_intro, "year": _select_year}
+                                          "intro": _select_intro, "year": _select_year, "conditions": select_conditions}
 _TIER_ORDER = ("term", "model_year", "balance", "loan_amount", "segment")
-_FILTER_ORDER = ("program", "branch_name", "day", "jumbo", "special", "intro", "year")
+_FILTER_ORDER = ("program", "branch_name", "day", "jumbo", "special", "intro", "year", "conditions")
 _HARD_TIERS = ("term", "model_year", "balance", "loan_amount")  # an asked tier of these kinds can refuse
 
 

@@ -103,3 +103,22 @@ def test_diagnostic_tool_refuses_sealed_paths_before_reading(tmp_path):
     path.write_bytes(data + b"\n")
     with pytest.raises(ValueError, match="hash mismatch"):
         module.checked_input(path, manifest, "questions_sha256")
+
+
+@pytest.mark.parametrize("label,confident,reasons,expected", [
+    (True, False, [], "evidence_or_selection"),
+    ("answerable", False, [], "evidence_or_selection"),
+    ("answerable", False, ["unknown_entity"], "parsing"),
+    (False, True, [], "refusal_or_rendering"),
+    ("unanswerable", True, [], "refusal_or_rendering"),
+    ("unanswerable", False, [], "unresolved"),
+    ("answerable", False, ["rendering_grounding"], "rendering"),
+])
+def test_diagnostic_attribution_accepts_only_documented_answerability_labels(label, confident, reasons, expected):
+    spec = importlib.util.spec_from_file_location("diagnose", Path("scripts/diagnose_generalization.py"))
+    module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    info = {"confident": confident, "trace": {"parser": {}, "refusals": [{"reason": r} for r in reasons]}}
+    assert module.attribution(info, {"answerability": label})["suspected_stage"] == expected
+    for invalid in (1, 0, "yes", "unsupported", [], {}):
+        with pytest.raises(ValueError, match="answerability"):
+            module.attribution(info, {"answerability": invalid})

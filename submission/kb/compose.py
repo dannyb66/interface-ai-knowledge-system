@@ -15,10 +15,13 @@ from .normalize import number_tokens, question_amount
 from .resolve import PAST
 from .types import AnswerPlan, Fact, FactKey
 from .compose_prose import render_prose
-from .claim_semantics import compatible_question, semantics_survive
+from .claim_semantics import comparison_value, compatible_question, semantics_survive
+from .compound_prose import complete_render
+from .rate_bounds import bounded_value
+from .historical_scope import contact_text, historical_render_supported, historical_text, source_reference
 
 # Straight apostrophes only: harness/scoring.py REFUSAL_RE matches "can't", not a curly quote.
-REFUSAL_TEMPLATE = "Dupaco's website doesn't list {span}, so I can't confirm it. Please contact Dupaco."
+REFUSAL_TEMPLATE = "I can't confirm {span} from the provided information. Please contact Dupaco."
 _FALLBACK_SPAN = "that"  # the refusal of a plan that carries no span of its own
 _VERDICTS = ("Yes. ", "No. ")  # a yes/no answer's opening word; "As of" goes after it
 # Change and past answers date their own crawls; hours carry no date (decision 3); a status line prints its own date.
@@ -57,7 +60,8 @@ def _table(plan: AnswerPlan) -> str:
     rows = _rows(plan.facts)
     text = "\n".join(sentence("{}: {}".format(label(row[0], names), phrase(row))) for row in rows)
     question = (plan.question or "").lower()
-    if len(rows) == 2 and "which" in question and all(row[0].value is not None for row in rows):
+    if (len(rows) == 2 and "which" in question and all(row[0].value is not None for row in rows)
+            and not any(f.rate_bound for f in plan.facts)):
         lower = bool(re.search(r"\b(?:less|lower|cheaper)\b", question))
         if lower or re.search(r"\b(?:more|higher|better)\b", question):
             a, b = (row[0].value for row in rows)
@@ -95,7 +99,7 @@ def _on(snapshot_id: str, plan: AnswerPlan) -> str:
 
 
 def _values(row: Row) -> Tuple[Tuple[str, object], ...]:
-    return tuple((f.attribute, f.value if f.value is not None else f.value_text) for f in row)
+    return tuple((f.attribute, comparison_value(f)) for f in row)
 
 
 def _question(plan: AnswerPlan) -> Optional[str]:
@@ -134,10 +138,10 @@ def render_list(plan: AnswerPlan) -> str:
 
 
 def render_yes_no(plan: AnswerPlan) -> str:
-    """``No.`` when the question claims a value no row shows as its own, else ``Yes.``, then the grounding rows; a
-    question with a comparison word (``below 12%``, ``_COMPARISON_RE``) gets the rows alone, as it asks no equality.
-    A claimed number is printed only where a row shows it (a hidden item may list the claim as a trap)."""
+    """Exact numeric equality gets a verdict; comparisons and published bounds state only grounded rows."""
     question = _question(plan)
+    if any(f.rate_bound for f in plan.facts):
+        return _table(plan)  # a published lower bound does not establish an exact or personal rate
     if question and plan.facts and all(f.attribute in ("min_to_open", "min_to_earn") for f in plan.facts):
         amount = question_amount(question.lower())
         minima = [f.value for f in plan.facts if f.value is not None]
@@ -174,14 +178,11 @@ def render_count(plan: AnswerPlan) -> str:
 
 
 def render_change(plan: AnswerPlan) -> str:
-    """Rows paired across the two crawls by fact key. When the plan has two crawls and permits both dates, a header
-    line ``Between {date A} and {date B}:`` dates them once and the rows read ``{label}: it was X; it is Y.``,
-    ``{label}: unchanged at Y.``, or, for a row only one crawl has, ``it was X`` (the from-crawl) or ``it is Y``
-    (the latest crawl). Otherwise each row dates itself: ``{label}: on {date A} it was X; on {date B} it is Y.``,
-    ``{label}: unchanged at Y between {date A} and {date B}.``, ``{label}: on {date B} it is Y.``, with ``in an
-    earlier crawl`` or ``in the latest crawl`` for a date the plan does not permit. A one-sided row is stated for
-    its crawl alone, the other side never invented. The resolver's change plan holds the from-crawl's rows first,
-    and ``plan.snapshot_id`` is the latest crawl."""
+    """Pair selected rows by key and date both sides. Missing sides are never invented.
+
+    Equal values are unchanged only when their bound and complete typed meaning also agree.
+    The plan holds the from-crawl first; ``snapshot_id`` is the latest selected crawl.
+    """
     names = product_names()
     by_key: Dict[FactKey, Dict[str, Row]] = {}
     for row in _rows(plan.facts):
@@ -205,7 +206,8 @@ def render_change(plan: AnswerPlan) -> str:
         elif _values(old) == _values(new):
             dates = [_date(sid, plan.permitted_values, True) for sid in (order[0], order[-1])]
             between = " between {} and {}".format(*dates) if all(dates) and not header else ""
-            lines.append(sentence("{}: unchanged at {}{}".format(head, phrase(new), between)))
+            values = "; ".join(dict.fromkeys(phrase(row) for row in (old, new)))
+            lines.append(sentence("{}: unchanged at {}{}".format(head, values, between)))
         else:
             lines.append(sentence("{}: {}it was {}; {}it is {}".format(head, then, phrase(old), now, phrase(new))))
     return "\n".join(lines)
@@ -214,8 +216,7 @@ def render_change(plan: AnswerPlan) -> str:
 def render_past(plan: AnswerPlan) -> str:
     """A past-value plan (the resolver's ``PAST`` intent), rows paired by fact key. A key the reference crawl
     (``plan.snapshot_id``) lacks is an old value: ``{label}: {value} as of {Month D, YYYY}.``, dated by its own crawl.
-    A key the reference crawl has never changed: ``{label}: unchanged at {value} since {Month D, YYYY}.``, the
-    reference row's value dated by the key's first crawl in the plan (the first that carried it). A date the plan
+    A key the reference crawl has never changed reads ``unchanged at {value} since {Month D, YYYY}``. A date the plan
     does not permit reads ``in an earlier crawl``, and the unchanged line leaves it out."""
     names = product_names()
     by_key: Dict[FactKey, Dict[str, Row]] = {}
@@ -227,8 +228,9 @@ def render_past(plan: AnswerPlan) -> str:
         day = _date(first, plan.permitted_values, True)
         if plan.snapshot_id in crawls:
             row = crawls[plan.snapshot_id]
+            values = "; ".join(dict.fromkeys(phrase(r) for r in crawls.values()))
             since = " since " + day if day else ""
-            lines.append(sentence("{}: unchanged at {}{}".format(label(row[0], names), phrase(row), since)))
+            lines.append(sentence("{}: unchanged at {}{}".format(label(row[0], names), values, since)))
         else:
             when = "as of " + day if day else "in an earlier crawl"
             lines.append(sentence("{}: {} {}".format(label(crawls[first][0], names), phrase(crawls[first]), when)))
@@ -236,15 +238,13 @@ def render_past(plan: AnswerPlan) -> str:
 
 
 def render_address(plan: AnswerPlan) -> str:
-    """``The {branch} branch is at {address}.`` per fact."""
-    return "\n".join(sentence("The {} branch is at {}".format(_branch(f), f.value_text) if _branch(f)
-                               else "The address is {}".format(f.value_text)) for f in plan.facts)
+    """One branch address per fact, attributed when a source announcement is asked."""
+    return "\n".join(sentence(contact_text(f, _branch(f), plan.question)) for f in plan.facts)
 
 
 def render_phone(plan: AnswerPlan) -> str:
-    """``Call Dupaco at {number}.``, or the named branch's number."""
-    return "\n".join(sentence("Call the {} branch at {}".format(_branch(f), f.value_text) if _branch(f)
-                               else "Call Dupaco at {}".format(f.value_text)) for f in plan.facts)
+    """One contact phone per fact, attributed when a source announcement is asked."""
+    return "\n".join(sentence(contact_text(f, _branch(f), plan.question)) for f in plan.facts)
 
 
 def render_routing(plan: AnswerPlan) -> str:
@@ -266,7 +266,7 @@ _BY_ATTRIBUTE: Dict[str, Callable[[AnswerPlan], str]] = {"alternatives": render_
 def _by_attribute(plan: AnswerPlan) -> Optional[Callable[[AnswerPlan], str]]:
     """``_BY_ATTRIBUTE``'s template when every fact of the plan holds the one attribute it lists, else ``None``."""
     attribute = plan.facts[0].attribute if plan.facts else ""
-    if (plan.intent in ("value", "count", "yes_no") and plan.facts
+    if (plan.intent in ("value", "count", "yes_no", "how_to") and plan.facts
             and len({f.product_id for f in plan.facts}) == 1
             and all(f.attribute in ("description", "eligibility") for f in plan.facts)):
         return render_prose
@@ -297,21 +297,22 @@ def _with_as_of(text: str, plan: AnswerPlan) -> str:
     before the verdict split); a change or past answer dates its own crawls, and an hours, status or ``_BY_ATTRIBUTE``
     answer carries no date."""
     when = _date(plan.as_of, plan.permitted_values, False)
-    if when is None or plan.intent in _UNDATED or _by_attribute(plan) is not None or not _crawl_covers(plan):
+    if (when is None or plan.intent in _UNDATED or _by_attribute(plan) is not None or not _crawl_covers(plan)
+            or source_reference(plan.question) is not None):
         return text
     verdict = next((word for word in _VERDICTS if text.startswith(word)), "")
     return "{}As of {}, {}".format(verdict, when, text[len(verdict):])
 
 
 def _cited(plan: AnswerPlan) -> List[AnswerSource]:
-    """One source per distinct page of ``plan.sources``, first seen first: the resolver repeats a page once per
-    fact, and the copies on other pages stay (the expected page may hold only a copy of the winning row)."""
-    seen: Set[str] = set()
+    """Distinct URL/crawl/quote evidence, preserving historical and same-page supporting claims."""
+    seen: Set[Tuple[str, str, str]] = set()
     out = []
     for s in plan.sources:
         url = s.citation_url or s.canonical_url
-        if url not in seen:
-            seen.add(url)
+        identity = (url, s.snapshot_id, s.quote)
+        if identity not in seen:
+            seen.add(identity)
             out.append(AnswerSource(url=url, snapshot_id=s.snapshot_id, quote=s.quote))
     return out
 
@@ -325,14 +326,17 @@ def render_with_dropped(plan: AnswerPlan) -> Tuple[Answer, List[str]]:
             head = label(plan.facts[0], product_names()) if plan.facts else "That"
             if not number_tokens(head) <= plan.permitted_values:
                 head = "That"
-            return Answer(text=head + " is no longer offered. Dupaco's website does not list a current value.",
+            return Answer(text="I can't confirm a current value for " + head + " from the provided information. Please contact Dupaco.",
                           sources=[], confident=False, conflict_note=plan.conflict_note), []
         return refusal(plan.refusal_span or _FALLBACK_SPAN), []
     template = _by_attribute(plan) or RENDERERS.get(plan.intent, render_value)
     if template is render_yes_no and any(f.semantics is not None for f in plan.facts):
         template = render_value  # typed prose is not a numeric-only equality or personal eligibility verdict
-    text, dropped = lint(strip_residue(template(plan)), plan.permitted_values, strict=plan.strict_numbers)
-    if not grounded(text, plan.facts) or not semantics_survive(text, plan.facts) or not compatible_question(plan):
+    text, dropped = lint(strip_residue(historical_text(template(plan), plan)), plan.permitted_values,
+                         strict=plan.strict_numbers)
+    if (not grounded(text, plan.facts) or not semantics_survive(text, plan.facts)
+            or any(strip_residue(bounded_value(f)) not in text for f in plan.facts if f.rate_bound)
+            or not compatible_question(plan) or not complete_render(text, plan) or not historical_render_supported(text, plan)):
         return refusal(plan.refusal_span or _FALLBACK_SPAN), dropped
     caveat = "\n" + plan.conflict_note if plan.conflict_note and _before_first_crawl(plan) else ""
     return Answer(text=_with_as_of(text, plan) + caveat, sources=_cited(plan), confident=True,

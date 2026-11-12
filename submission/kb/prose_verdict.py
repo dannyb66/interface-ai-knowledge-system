@@ -38,6 +38,8 @@ def _quantities(text):
 def prose_prefix(plan, label):
     if plan.intent != "yes_no":
         return ""
+    if any(f.semantics is not None for f in plan.facts):
+        return ""  # word overlap cannot prove typed predicates, negation, conditions or personal eligibility
     question = plan.question or ""
     evidence = " ".join(f.value_text for f in plan.facts)
     if _COMPARISON.search(question) or _NEGATION.search(question):

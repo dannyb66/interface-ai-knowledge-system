@@ -55,6 +55,9 @@ from .store import FactStore
 from .types import Fact, fact_to_dict
 from .diagnostics import ResolutionTrace, answer_dict
 from .source_pages import SourcePages, source_page, content_digest
+from .lexical_index import LexicalIndex
+from .routing import recover
+from .fee_semantics import reviewed_duplicates
 
 _FALLBACK_SPAN = "that"  # the refusal's span when answering itself failed
 _WARM_UP = "What is the Share Savings APY?"  # any question will do: answering one builds the lazy tables
@@ -151,6 +154,7 @@ class KnowledgeSystem:
         self._notes: NoteIndex = {}  # (product_id, attribute) -> verified entries, rebuilt with _conflicts
         self._dropped: Set[str] = set()  # topics already reported with KB-E07
         self._source_quality: Dict[str, dict] = {}
+        self._routing_index = LexicalIndex()
 
     def ingest(self, snapshot: Snapshot) -> None:
         """Add one crawl's facts, finalise the store, empty the answer cache and warm up (see the module docstring)."""
@@ -193,11 +197,14 @@ class KnowledgeSystem:
                 skipped.append("{}: {}".format(text[0][:_LOG_CHARS], type(exc).__name__))
         normalized = {}
         facts.extend(self._prose_book.facts(snapshot_id, sources, normalized))
+        facts = self._prose_book.bind_groups(snapshot_id, reviewed_duplicates(facts))
         try:
             self.store.add(snapshot_id, day, facts)
         finally:
             self.store.finalize()  # never leave the store dirty: in_force() would raise for every question
         self._check_conflicts(snapshot_id, sources, normalized)
+        if self.config.lexical_routing:
+            self._routing_index = LexicalIndex.build(self.store, self.registry)
         self._answers.clear()
         self._warm_up()
         counts = {"pages": len(pages) - len(skipped), "skipped_pages": len(skipped), "facts": len(facts),
@@ -260,6 +267,9 @@ class KnowledgeSystem:
             warn_once("KB-E04", value=as_of[:_LOG_CHARS] if isinstance(as_of, str) else as_of)
         return q
 
+    def _route(self, query: Query, trace=None) -> Query:
+        return recover(query, self._routing_index, self.registry, self.config, trace)
+
     def answer(self, question: Optional[str], as_of: Optional[str] = None) -> Answer:
         """The member-facing answer, from the cache when this exact question was answered since the last ingest;
         never raises (see the module docstring)."""
@@ -269,7 +279,7 @@ class KnowledgeSystem:
                 return render_with_dropped(resolve(q, self.store, self.registry))[0]
             cached = self._answers.get(q)
             if cached is None:
-                plan = resolve(q, self.store, self.registry)
+                plan = resolve(self._route(q), self.store, self.registry)
                 cached = self._answers[q] = with_note(render_with_dropped(plan)[0], plan, self._notes)
             return _copy(cached)
         except _EXPECTED as exc:  # a date, store or data failure
@@ -297,7 +307,7 @@ class KnowledgeSystem:
         trace = ResolutionTrace()
         q = self._parse(question, as_of, trace)
         t1 = time.perf_counter()
-        plan = resolve(q, self.store, self.registry, trace)
+        plan = resolve(self._route(q, trace), self.store, self.registry, trace)
         t2 = time.perf_counter()
         answer, dropped = render_with_dropped(plan)
         answer = with_note(answer, plan, self._notes)

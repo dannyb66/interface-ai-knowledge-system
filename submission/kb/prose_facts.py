@@ -20,6 +20,8 @@ from .verify import page_text, quote_found, value_in_quote
 from .claim_semantics import (ClaimSemantics, SourcePin, UNITS, parse_pins, semantic_revision,
                              semantics_from_dict, validate_semantics)
 from .source_pages import SourcePages, matching, variants
+from .claim_groups import attach_groups, bind_groups
+from .conditions import validate_conditions
 
 
 @dataclass(frozen=True)
@@ -40,9 +42,10 @@ class ProseEntry:
     effective_date: Optional[str] = None
     semantics: Optional[ClaimSemantics] = None
     source_pins: Tuple[SourcePin, ...] = ()
+    claim_groups: tuple = ()  # derived before verification; not an entry schema field
 
 
-_V2_FIELDS = frozenset(ProseEntry.__dataclass_fields__)
+_V2_FIELDS = frozenset(ProseEntry.__dataclass_fields__) - {"claim_groups"}
 _V1_FIELDS = _V2_FIELDS - {"effective_date", "semantics", "source_pins"}
 
 
@@ -80,6 +83,7 @@ def parse_prose(data: Mapping[str, Any], registry: Registry) -> List[ProseEntry]
                 raise ValueError("unknown qualifier")
             if any(not isinstance(v, (str, int, float, bool)) for v in quals.values()):
                 raise ValueError("qualifiers must be scalar")
+            validate_conditions(quals)
             if any(k in quals and (type(quals[k]) is not int or quals[k] < 1) for k in ("item", "year")):
                 raise ValueError("item and year must be positive integers")
             if raw["unit"] not in (UNITS if version2 else ("text", "usd", "count")) or raw["extractor"] != "curated":
@@ -120,7 +124,9 @@ def parse_prose(data: Mapping[str, Any], registry: Registry) -> List[ProseEntry]
                                       effective, semantic, pins))
         except (KeyError, TypeError, ValueError) as exc:
             raise ValueError("{}: {}".format(where, exc)) from exc
-    return entries
+    if schema == 1 and data.get("claim_groups"):
+        raise ValueError("claim_groups require prose schema 2")
+    return attach_groups(entries, data.get("claim_groups", []))
 
 
 def load_prose(path: Path, registry: Registry) -> List[ProseEntry]:
@@ -135,6 +141,9 @@ class ProseBook:
 
     def pages_needed(self, snapshot_id: str) -> FrozenSet[str]:
         return frozenset(u for e in self.entries if snapshot_id in e.crawls for u in e.canonical_urls)
+
+    def bind_groups(self, snapshot_id: str, facts: List[Fact]) -> List[Fact]:
+        return bind_groups(facts, self.entries, snapshot_id)
 
     def facts(self, snapshot_id: str, pages: Mapping[str, Tuple[str, str]], normalized=None) -> List[Fact]:
         normalized = {} if normalized is None else normalized
@@ -163,7 +172,8 @@ class ProseBook:
                     key = make_key(e.product_id, e.attribute, dict(e.qualifiers))
                     facts.append(Fact(key, e.product_id, e.attribute, e.qualifiers, e.value, e.value_text, e.unit,
                                       e.claim_type, e.effective_date, e.event_date, e.published_date, source,
-                                      "curated", 1.0, e.semantics))
+                                      "curated", 1.0, e.semantics,
+                                      tuple(group for sid, group in e.claim_groups if sid == snapshot_id)))
         return facts
 
     def dropped(self, observed) -> List[Tuple[str, str]]:

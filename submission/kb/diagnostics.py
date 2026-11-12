@@ -34,6 +34,7 @@ class RefusalReason(str, Enum):
     WITHDRAWN = "withdrawn"
     AMBIGUOUS = "ambiguous"
     RENDERING_GROUNDING = "rendering_grounding"
+    INCOMPLETE_CLAIM_GROUP = "incomplete_claim_group"
 
 
 def fact_id(fact: Fact) -> str:
@@ -108,6 +109,8 @@ def capture_parse(trace: ResolutionTrace, q: Any, hits: Sequence[Any], attrs: An
     trace.parser["qualifiers"] = qualifiers
     trace.parser["original_question"] = q.raw_span
     trace.parser["question_numbers"] = [list(number) for number in sorted(q.question_numbers)]
+    trace.field("requested_prose_attributes", list(q.requested_prose_attributes),
+                Origin.EXPLICIT if q.requested_prose_attributes else Origin.ABSENT)
 
 
 def answer_dict(answer: Any) -> dict:

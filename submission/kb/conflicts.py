@@ -2,7 +2,8 @@
 
 The file is ``{"_version": ..., "conflicts": [entry, ...]}``. An entry has ``topic``, ``values``, ``sources`` (each
 ``url``, ``snapshot_id``, ``value``, ``quote``), ``resolution``, ``reason``, ``confidence`` and optionally ``keys``
-(``[product_id, attribute]`` pairs). ``parse_curated`` rejects a malformed entry with a ``ValueError`` naming its
+(``[product_id, attribute]`` pairs) and ``note_qualifiers`` (reviewed scalar scope for answer notes).
+``parse_curated`` rejects a malformed entry with a ``ValueError`` naming its
 topic: every value must be unit-bearing and have a source, every source value must be one of the values, the
 resolution's numbers must come from the values, the confidence must lie in [0, 1] and topics must be unique.
 
@@ -13,17 +14,18 @@ crawls arrive does not matter. ``emit`` only reads the stored results: an entry 
 verified (every value has a source, so every value is verified too), confidence first, ties in file order, as fresh
 ``contract.Conflict`` objects. ``dropped`` names the entries whose crawls were all observed and that still failed.
 
-Answer notes: ``note_index`` maps each ``(product_id, attribute)`` an entry lists in ``keys`` to the verified entries,
-in ``emit`` order. ``with_note`` gives a confident answer whose plan's first fact is under such a key the note of the
-first entry whose resolution shares a number with that fact's ``value_text``: "Sources disagree (<values>);
-<resolution> is current. <reason>", joined onto ``conflict_note``. The answer's text never changes, and a failure
-in the note step keeps the answer without a note.
+Answer notes match selected facts by product, attribute, reviewed qualifiers and resolved value. Every cited crawl
+must be no later than the answer's serving date. Notes identify their topic and append verified evidence citations,
+deduplicated by exact URL, snapshot and quote. The answer text and official Conflict objects remain unchanged.
 """
 from __future__ import annotations
 
 import dataclasses
+from datetime import date
 import json
+import math
 from pathlib import Path
+import re
 from typing import Any, Callable, Dict, FrozenSet, Iterable, List, Mapping, Optional, Set, Tuple
 
 from contract import Answer, Conflict
@@ -34,6 +36,9 @@ from .plans import join_notes
 from .types import AnswerPlan, CuratedConflict, CuratedSource, Fact
 from .verify import page_text, quote_found, unit_bearing, value_in_quote
 from .source_pages import SourcePages, matching, variants
+from .registry import QUALIFIERS
+from .conditions import validate_conditions
+from .historical_scope import source_reference
 
 _FIELDS = ("topic", "values", "sources", "resolution", "reason", "confidence")
 _SOURCE_FIELDS = ("url", "snapshot_id", "value", "quote")
@@ -67,6 +72,27 @@ def _keys(raw: Any, fail: Callable[[str], ValueError]) -> Tuple[Tuple[str, str],
                                 and all(isinstance(part, str) and part for part in pair) for pair in pairs):
         raise fail("keys must be a list of [product_id, attribute] pairs")
     return tuple((pair[0], pair[1]) for pair in pairs)
+
+
+def _note_scope(raw: Any, fail: Callable[[str], ValueError]) -> Tuple[Tuple[str, Any], ...]:
+    if not isinstance(raw, dict) or set(raw) - QUALIFIERS:
+        raise fail("note_qualifiers must be an object of known scalar qualifiers")
+    for key, value in raw.items():
+        if type(value) not in (str, int, float, bool) or isinstance(value, str) and not value:
+            raise fail("note_qualifiers must contain nonempty scalar values")
+        if isinstance(value, float) and not math.isfinite(value):
+            raise fail("note_qualifiers must be finite")
+        if key in ("term_months", "year", "item") and (type(value) is not int or value < 1):
+            raise fail("note qualifier " + key + " must be a positive integer")
+        if key in ("jumbo", "special", "intro") and type(value) is not bool:
+            raise fail("note qualifier " + key + " must be boolean")
+        if key in ("balance_min", "balance_max", "loan_amount_max", "model_year_min", "model_year_max") and type(value) not in (int, float):
+            raise fail("note qualifier " + key + " must be numeric")
+    try:
+        validate_conditions(raw)
+    except ValueError as exc:
+        raise fail(str(exc)) from exc
+    return tuple(sorted(raw.items()))
 
 
 def _entry(row: Any, number: int) -> CuratedConflict:
@@ -108,7 +134,10 @@ def _entry(row: Any, number: int) -> CuratedConflict:
     if isinstance(confidence, bool) or not isinstance(confidence, (int, float)) or not 0.0 <= confidence <= 1.0:
         raise fail("confidence must be a number in [0, 1]")
     keys = _keys(row.get("keys", []), fail)
-    return CuratedConflict(topic, tuple(values), sources, resolution, reason, float(confidence), keys)
+    scope = _note_scope(row.get("note_qualifiers", {}), fail)
+    if scope and not keys:
+        raise fail("note_qualifiers require answer keys")
+    return CuratedConflict(topic, tuple(values), sources, resolution, reason, float(confidence), keys, scope)
 
 
 def parse_curated(data: Mapping[str, Any]) -> List[CuratedConflict]:
@@ -225,27 +254,77 @@ def note_index(entries: Iterable[CuratedConflict]) -> NoteIndex:
     return index
 
 
-def answer_note(index: NoteIndex, fact: Fact) -> Optional[str]:
-    """The note of the first entry under the fact's ``(product_id, attribute)`` whose resolution shares a number
-    (unit included) with the fact's ``value_text``; ``None`` when no entry does."""
+def _crawl_day(snapshot_id: str) -> Optional[str]:
+    found = re.search(r"\d{4}-\d{2}-\d{2}", snapshot_id or "")
+    if not found:
+        return None
+    try:
+        return date.fromisoformat(found.group()).isoformat()
+    except ValueError:
+        return None
+
+
+def _applicable(index: NoteIndex, fact: Fact, cutoff: Optional[str] = None) -> List[CuratedConflict]:
+    """Only verified chronology available by this selected fact's crawl can annotate it."""
+    fact_day = _crawl_day(fact.source.snapshot_id)
+    if fact_day is None:
+        return []
+    limit = min(fact_day, cutoff) if cutoff else fact_day
     shown = number_tokens(fact.value_text)
+    qualifiers = dict(fact.qualifiers)
+    entries = []
     for entry in index.get((fact.product_id, fact.attribute), ()):
+        if any(qualifiers.get(key) != value for key, value in entry.note_qualifiers):
+            continue
+        days = [_crawl_day(source.snapshot_id) for source in entry.sources]
+        if not days or any(day is None or day > limit for day in days):
+            continue
         if number_tokens(entry.resolution) & shown:
-            return "Sources disagree ({}); {} is current. {}".format(", ".join(entry.values), entry.resolution,
-                                                                     entry.reason)
-    return None
+            entries.append(entry)
+    return entries
+
+
+def _note(entry: CuratedConflict) -> str:
+    return "{}: Sources differ ({}); {} is current. {}".format(
+        entry.topic, ", ".join(entry.values), entry.resolution, entry.reason)
+
+
+def answer_note(index: NoteIndex, fact: Fact) -> Optional[str]:
+    """The first topic- and date-scoped note for this selected fact, if any."""
+    entries = _applicable(index, fact)
+    return _note(entries[0]) if entries else None
 
 
 def with_note(answer: Answer, plan: AnswerPlan, index: NoteIndex) -> Answer:
-    """``answer`` with the curated note of the plan's first fact joined onto its ``conflict_note``, when the plan and
-    the answer are both confident and the fact has one; otherwise ``answer`` itself. The text never changes, and a
-    failure while finding the note also returns ``answer`` itself, never a refusal."""
+    """Attach matching notes and all their verified evidence to a confident answer.
+
+    Every selected current fact is considered; topic labels keep a mixed-term
+    answer unambiguous. Failure preserves the original answer and its sources.
+    """
     try:
-        if not (plan.confident and answer.confident and plan.facts):
+        if not (plan.confident and answer.confident and plan.facts) or source_reference(plan.question) is not None:
             return answer
-        note = answer_note(index, plan.facts[0])
-        if note is None:
+        dates = [day for day in (plan.as_of, plan.crawl_date) if day]
+        cutoff = min(dates) if dates else _crawl_day(plan.snapshot_id)
+        entries, seen = [], set()
+        for fact in plan.facts:
+            if fact.source.snapshot_id != plan.snapshot_id:
+                continue
+            for entry in _applicable(index, fact, cutoff):
+                if entry.topic not in seen:
+                    entries.append(entry)
+                    seen.add(entry.topic)
+        if not entries:
             return answer
-        return dataclasses.replace(answer, conflict_note=join_notes(answer.conflict_note, note))
+        sources = list(answer.sources)
+        cited = {(source.url, source.snapshot_id, source.quote) for source in sources}
+        for entry in entries:
+            for source in entry.sources:
+                identity = (source.url, source.snapshot_id, source.quote)
+                if identity not in cited:
+                    sources.append(ContractSource(url=source.url, snapshot_id=source.snapshot_id, quote=source.quote))
+                    cited.add(identity)
+        return dataclasses.replace(answer, sources=sources,
+                                   conflict_note=join_notes(answer.conflict_note, *(_note(entry) for entry in entries)))
     except Exception:  # the note is extra: its failure must not cost the member the answer
         return answer

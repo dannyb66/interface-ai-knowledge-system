@@ -9,6 +9,8 @@ from dataclasses import asdict, dataclass
 from enum import Enum
 from typing import Any, FrozenSet, Iterable, List, Mapping, Optional, Sequence, Tuple
 from .claim_semantics import ClaimSemantics, semantics_from_dict, validate_semantics
+from .claim_groups import ClaimGroup, group_from_dict
+from .conditions import validate_conditions
 
 # (product_id, attribute, qualifiers): the qualifiers are (name, value) pairs sorted by name, ``None`` dropped.
 FactKey = Tuple[str, str, Tuple[Tuple[str, Any], ...]]
@@ -59,6 +61,8 @@ class Fact:
     extractor: str
     confidence: float
     semantics: Optional[ClaimSemantics] = None
+    claim_groups: Tuple[ClaimGroup, ...] = ()
+    rate_bound: Optional[str] = None  # explicit loan-rate column bound; never inferred from a product family
 
 
 @dataclass(frozen=True)
@@ -72,7 +76,7 @@ class AnswerPlan:
     confident: bool  # False only for refusal plans
     conflict_note: Optional[str]
     snapshot_id: Optional[str]
-    refusal_span: Optional[str] = None  # what the refusal says Dupaco's website does not list
+    refusal_span: Optional[str] = None  # the requested information the system cannot confirm
     as_of: Optional[str] = None  # the ISO date the question or the argument supplied; None when neither did
     question: Optional[str] = None  # the question as parsed (``Query.raw_span``: cut, stripped, digits kept)
     first_crawl: Optional[str] = None  # ``taken_on`` of the earliest ingested crawl (``resolve`` sets it)
@@ -81,6 +85,7 @@ class AnswerPlan:
     as_of_end: Optional[str] = None
     withdrawn: bool = False
     same_crawl: bool = False
+    requested_prose_attributes: Tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -104,6 +109,7 @@ class CuratedConflict:
     reason: str
     confidence: float
     keys: Tuple[Tuple[str, str], ...] = ()  # the (product_id, attribute) pairs whose answers note this conflict
+    note_qualifiers: Tuple[Tuple[str, Any], ...] = ()  # reviewed scalar scope for answer notes only
 
 
 def make_key(product_id: str, attribute: str, qualifiers: Mapping[str, Any]) -> FactKey:
@@ -141,6 +147,10 @@ def fact_to_dict(f: Fact) -> dict:
     }
     if f.semantics is not None:
         out["semantics"] = asdict(f.semantics)
+    if f.claim_groups:
+        out["claim_groups"] = [asdict(group) for group in f.claim_groups]
+    if f.rate_bound is not None:
+        out["rate_bound"] = f.rate_bound
     return out
 
 
@@ -166,7 +176,12 @@ def fact_from_dict(d: dict) -> Fact:
         extractor=d["extractor"],
         confidence=d["confidence"],
         semantics=semantics_from_dict(d["semantics"]) if d.get("semantics") is not None else None,
+        claim_groups=tuple(group_from_dict(group) for group in d.get("claim_groups", [])),
+        rate_bound=d.get("rate_bound"),
     )
     if fact.semantics is not None:
         validate_semantics(fact.semantics, fact.source.quote, fact.value_text, fact.unit, fact.value, fact.attribute)
+    validate_conditions(dict(fact.qualifiers))
+    from .rate_bounds import validate_bound
+    validate_bound(fact)
     return fact

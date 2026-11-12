@@ -40,7 +40,7 @@ def test_past_value_answers_the_old_side_only(store_full):
 
 def test_past_value_unchanged_absent_and_change_wording(store_full):
     flat = resolve(_past("What was the previous APR on a 36-month personal loan?"), store_full, R)  # 10.49% in every crawl
-    assert render(flat).text == "36 Month Personal Loan: unchanged at 10.49% APR since May 12, 2026."
+    assert render(flat).text == "36 Month Personal Loan: unchanged at as low as 10.49% APR since May 12, 2026."
     gone = "What was the previous APY on the 25-month certificate special?"  # crawls 01-02 only
     assert resolve(_past(gone), store_full, R).confident is False  # absent at the reference crawl: refused
     assert resolve(_past(gone, "2026-05-15"), store_full, R).confident is False  # fix round 2: its reference crawl is the first
@@ -56,13 +56,13 @@ def test_past_value_unchanged_absent_and_change_wording(store_full):
 # when none is left); a relabelled tier left unchanged dates nothing, since its old key would print apart from today's.
 def test_past_value_pairs_a_relabelled_model_year_tier(store_full):
     one = render(_plan(store_full, "What was the previous APR on a 60-month auto loan for a 2025 model year?")).text
-    assert one == "60 Month Auto Loan, 2023-2026 model years: 5.19% APR as of August 27, 2026." and not contains(one, "5.39%")
+    assert one == "60 Month Auto Loan, 2023-2026 model years: as low as 5.19% APR as of August 27, 2026." and not contains(one, "5.39%")
     up = render(_plan(store_full, "What was the APR of the 60-month auto loan before it went up?")).text
-    assert up.splitlines() == ["60 Month Auto Loan, 2023-2026 model years: 5.19% APR as of August 27, 2026.",
-                               "60 Month Auto Loan, 2021-2022 model years: 5.44% APR as of August 27, 2026.",
-                               "60 Month Auto Loan, 2017-2020 model years: 6.14% APR as of August 27, 2026."]
+    assert up.splitlines() == ["60 Month Auto Loan, 2023-2026 model years: as low as 5.19% APR as of August 27, 2026.",
+                               "60 Month Auto Loan, 2021-2022 model years: as low as 5.44% APR as of August 27, 2026.",
+                               "60 Month Auto Loan, 2017-2020 model years: as low as 6.14% APR as of August 27, 2026."]
     old = render(_plan(store_full, "What was the 84-month auto loan APR for a 2024 vehicle before it changed?")).text
-    assert old == "84 Month Auto Loan, 2023-2026 model years: 5.39% APR as of August 27, 2026." and "unchanged" not in old
+    assert old == "84 Month Auto Loan, 2023-2026 model years: as low as 5.39% APR as of August 27, 2026." and "unchanged" not in old
 
 def test_no_past_plan_dates_a_row_to_its_reference_crawl(store_full):
     crawls = store_full.snapshots()
@@ -169,7 +169,7 @@ def test_refusal_span_restates_no_unknown_name_number_or_link(store_full):
                            ("What is your rate on a 7/1 adjustable-rate mortgage?", "7/1")):
         a = render(_plan(store_full, question))
         assert a.confident is False and REFUSAL_RE.search(a.text), question
-        if "no longer offered" in a.text:  # A14b allows only product-label numbers already in the question
+        if _plan(store_full, question).withdrawn:  # historical identity allows only product-label numbers already asked
             from kb.normalize import number_tokens
             assert number_tokens(a.text) <= number_tokens(question), (question, a.text)
         else:
@@ -250,7 +250,7 @@ def test_negated_lower_bounds_and_more_upper_bounds_select_their_rows(store_full
 
 # fix round 3, F3: a site word before a verb names the source, so the value answers; a bare "on site" is no website
 def test_a_site_word_before_a_verb_answers_the_value(store_full):
-    assert render(_plan(store_full, "What is the website showing for the HELOC APR?")).text == "Home Equity Line of Credit: 6.25% APR."
+    assert render(_plan(store_full, "What is the website showing for the HELOC APR?")).text == "Home Equity Line of Credit: as low as 6.25% APR."
     assert render(_plan(store_full, "Where is the ATM on site at the Key West branch?")).confident is False  # as at base
 
 # fix round 3, F4: "where on the website's ... page" answers the url again, as at base, and so does "where's"
@@ -270,9 +270,9 @@ def test_past_value_pairs_the_tier_containing_the_asked_model_year(store_full):
     got = [render(_plan(store_full, q)).text for q in ("What was the previous APR on a 60-month auto loan for a 2023 model year?",
                                                        "What was the previous APR on a 72-month auto loan for a 2023 model year?",
                                                        "What was the previous APR on an 84-month auto loan for a 2023 model year?")]
-    assert got == ["60 Month Auto Loan, 2023-2026 model years: 5.19% APR as of August 27, 2026.",
-                   "72 Month Auto Loan, 2023-2026 model years: 5.29% APR as of August 27, 2026.",
-                   "84 Month Auto Loan, 2023-2026 model years: 5.39% APR as of August 27, 2026."]
+    assert got == ["60 Month Auto Loan, 2023-2026 model years: as low as 5.19% APR as of August 27, 2026.",
+                   "72 Month Auto Loan, 2023-2026 model years: as low as 5.29% APR as of August 27, 2026.",
+                   "84 Month Auto Loan, 2023-2026 model years: as low as 5.39% APR as of August 27, 2026."]
     assert render(_plan(store_full, "What was the previous 48-month auto loan APR for a 2027 model year?")).confident is False
 
 # fix round 3, F6: a current auto question with an incidental past word answers today's rows, undated
@@ -291,9 +291,9 @@ def test_more_ways_of_asking_for_the_website_answer_their_urls(store_full):
             "Which website contains certificate rates?": savings, "What site is the ATM locator on?": contact,
             "What website am I supposed to use to join?": join, "What's the website called where I can join?": join,
             "What's the website I'd use to join?": join, "What's the website you'd recommend for CD rates?": savings,
-            "What is the website showing for the HELOC APR?": "Home Equity Line of Credit: 6.25% APR.",
+            "What is the website showing for the HELOC APR?": "Home Equity Line of Credit: as low as 6.25% APR.",
             "What's the website offering on the 17-month special certificate?": "17 Month Fixed Certificate Special: 4.10% APY.",
-            "What's the website saying the HELOC APR is?": "Home Equity Line of Credit: 6.25% APR."}
+            "What's the website saying the HELOC APR is?": "Home Equity Line of Credit: as low as 6.25% APR."}
     assert {q: render(_plan(store_full, q)).text for q in want} == want
 
 # fix round 4, N2: a past question naming a model-year range pairs the earlier tier sharing the most of its years (in
@@ -302,14 +302,14 @@ def test_more_ways_of_asking_for_the_website_answer_their_urls(store_full):
 def test_past_value_pairs_the_tier_sharing_most_of_an_asked_range(store_full):
     got = [render(_plan(store_full, "What was the previous %d-month auto loan APR for the 2024-2027 model years?" % n)).text
            for n in (60, 72, 84)]
-    assert got == ["60 Month Auto Loan, 2023-2026 model years: 5.19% APR as of August 27, 2026.",
-                   "72 Month Auto Loan, 2023-2026 model years: 5.29% APR as of August 27, 2026.",
-                   "84 Month Auto Loan, 2023-2026 model years: 5.39% APR as of August 27, 2026."]
+    assert got == ["60 Month Auto Loan, 2023-2026 model years: as low as 5.19% APR as of August 27, 2026.",
+                   "72 Month Auto Loan, 2023-2026 model years: as low as 5.29% APR as of August 27, 2026.",
+                   "84 Month Auto Loan, 2023-2026 model years: as low as 5.39% APR as of August 27, 2026."]
     assert render(_plan(store_full, "What was the previous APR on a 60-month auto loan for 2021-2023 model years?")).text == (
-        "60 Month Auto Loan, 2021-2022 model years: 5.44% APR as of August 27, 2026.")
+        "60 Month Auto Loan, 2021-2022 model years: as low as 5.44% APR as of August 27, 2026.")
     assert render(_plan(store_full, "What was the previous 60-month auto loan APR for a 2027 model year?")).confident is False
     assert render(_plan(store_full, "What is the 60-month auto loan APR for the 2024-2027 model years?")).text == (
-        "60 Month Auto Loan, 2024-2027 model years: 5.39% APR.")
+        "60 Month Auto Loan, 2024-2027 model years: as low as 5.39% APR.")
 
 # fix round 4, F6 leftover: a current question whose "was" sits in a later clause, or with "previously been ...",
 # answers today's rows, undated; the past questions keep the old value
@@ -360,17 +360,17 @@ def test_previously_before_a_rate_participle_answers_the_old_value(store_full):
             "What is the formerly offered APY on the 10-month jumbo special?":
                 "10 Month Fixed Jumbo Certificate Special: 3.90% APY as of August 27, 2026.",
             "What is the previously advertised 60-month auto loan APR for a 2025 car?":
-                "60 Month Auto Loan, 2023-2026 model years: 5.19% APR as of August 27, 2026."}
+                "60 Month Auto Loan, 2023-2026 model years: as low as 5.19% APR as of August 27, 2026."}
     assert {q: render(_plan(store_full, q)).text for q in want} == want
 
 # fix round 5, D: a past question naming "between X and Y" model years pairs the earlier tier sharing the most of them,
 # as "from X to Y" does; a current one answers today's tier, as before
 def test_past_value_pairs_the_tier_sharing_most_of_a_between_range(store_full):
     want = {"What was the previous 60-month auto loan APR for between 2024 and 2027 model years?":
-                "60 Month Auto Loan, 2023-2026 model years: 5.19% APR as of August 27, 2026.",
+                "60 Month Auto Loan, 2023-2026 model years: as low as 5.19% APR as of August 27, 2026.",
             "What was the previous 60-month auto loan APR for between 2021 and 2023 model years?":
-                "60 Month Auto Loan, 2021-2022 model years: 5.44% APR as of August 27, 2026.",
+                "60 Month Auto Loan, 2021-2022 model years: as low as 5.44% APR as of August 27, 2026.",
             "What was the previous 60-month auto loan APR for from 2021 to 2023 model years?":
-                "60 Month Auto Loan, 2021-2022 model years: 5.44% APR as of August 27, 2026.",
-            "What is the 60-month auto loan APR for between 2021 and 2023 model years?": "60 Month Auto Loan, 2021-2023 model years: 5.64% APR."}
+                "60 Month Auto Loan, 2021-2022 model years: as low as 5.44% APR as of August 27, 2026.",
+            "What is the 60-month auto loan APR for between 2021 and 2023 model years?": "60 Month Auto Loan, 2021-2023 model years: as low as 5.64% APR."}
     assert {q: render(_plan(store_full, q)).text for q in want} == want

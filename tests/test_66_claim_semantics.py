@@ -169,7 +169,7 @@ def test_typed_eligibility_verdict_preserves_all_conditions_and_is_not_personal(
         assert not render(single_plan("yes_no", fact, question=question, strict_numbers=True)).confident
     supported = render(single_plan("yes_no", fact,
         question="Are applicants with membership and residency eligible?", strict_numbers=True))
-    assert supported.confident and supported.text.startswith("Yes.") and text in supported.text
+    assert supported.confident and not supported.text.startswith(("Yes.", "No.")) and text in supported.text
     ordinary = render(single_plan("value", fact, question="What are the requirements?", strict_numbers=True))
     assert ordinary.confident and text in ordinary.text
 

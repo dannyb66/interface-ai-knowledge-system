@@ -68,6 +68,19 @@ class ClaimSemantics:
     scale: str
 
 
+def comparison_value(fact: Any) -> Any:
+    """Typed meaning includes the full claim, not just its primary number.
+
+    Publication/capture changes remain evidence dates, not changes to the statement.
+    Legacy numeric formatting retains numeric equality; explicit rate bounds remain meaningful.
+    """
+    semantic = fact.semantics
+    if semantic is None:
+        return (fact.value if fact.value is not None else fact.value_text, fact.rate_bound)
+    return (fact.value, fact.value_text, fact.unit, semantic.role, semantic.comparator, semantic.basis,
+            semantic.condition_group, semantic.condition_logic, semantic.conditions, semantic.scale)
+
+
 def parse_pins(raw: Any, crawls: Sequence[str], urls: Sequence[str]) -> Tuple[SourcePin, ...]:
     if not isinstance(raw, list) or not raw:
         raise ValueError("v2 source_pins must be a nonempty list")
@@ -158,7 +171,14 @@ def validate_semantics(semantic: ClaimSemantics, quote: str, value_text: str, un
         if semantic.role != "eligibility_condition" or unit != "percent" or not semantic.basis or semantic.comparator == "none":
             raise ValueError("percentage eligibility needs a typed threshold and exact named basis")
     if attribute == "description" and (_PERCENT.search(quote) or _PP.search(quote)):
-        if semantic.role != "benefit" or unit not in ("percent", "percentage_points") or _RATE.search(quote):
+        typed_prose = semantic.role in ("procedure", "organization_fact") and unit == "percent"
+        if typed_prose:
+            percentages = [m for m in _NUMBER.finditer(value_text) if (m.group("unit") or "").strip().lower() in ("%", "percent")]
+            if (not semantic.basis or not semantic.conditions or semantic.comparator == "none"
+                    or len(percentages) != 1 or semantic.role == "procedure" and not semantic.condition_group):
+                raise ValueError("percentage procedure/event needs one typed primary value, basis and complete conditions")
+        if ((not typed_prose and (semantic.role != "benefit" or unit not in ("percent", "percentage_points")))
+                or _RATE.search(quote)):
             raise ValueError("description cannot contain an advertised rate")
     if unit == "text" and (_PERCENT.search(value_text) or _PP.search(value_text)):
         raise ValueError("percentage text needs an explicit numeric role")
@@ -167,9 +187,22 @@ def validate_semantics(semantic: ClaimSemantics, quote: str, value_text: str, un
 def semantics_survive(text: str, facts: Sequence[Any]) -> bool:
     """A v2 statement and every declared condition must survive composition/lint intact."""
     normalized = page_text(text)
+    from .fee_semantics import presentation_statement, scope_survives
+    from .source_attribution import attribution
+    from .prose_presentation import prose_statement
+    if not scope_survives(text, facts):
+        return False
     for fact in facts:
-        if fact.semantics is not None and (not quote_found(fact.value_text, normalized)
-                or any(not quote_found(condition, normalized) for condition in fact.semantics.conditions)):
+        statement = presentation_statement(fact, facts)
+        conditions = fact.semantics.conditions if fact.semantics is not None else ()
+        if fact.attribute in ("description", "eligibility"):
+            statement = prose_statement(statement)
+            conditions = tuple(prose_statement(condition) for condition in conditions)
+        if fact.attribute == "fee" and statement != fact.value_text:
+            conditions = tuple(c.replace("*", "") for c in conditions)
+        if fact.semantics is not None and (not quote_found(statement, normalized)
+                or any(not quote_found(condition, normalized) for condition in conditions)
+                or attribution(fact) and not quote_found(attribution(fact), normalized)):
             return False
     return True
 

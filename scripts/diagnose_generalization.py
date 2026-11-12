@@ -50,15 +50,20 @@ def attribution(info: dict, rubric: Optional[dict]) -> dict:
     reasons = [row["reason"] for row in info["trace"]["refusals"]]
     stage = "unresolved"
     expected = (rubric or {}).get("expected_route", {})
+    answerability = (rubric or {}).get("answerability")
+    if isinstance(answerability, str) and answerability in ("answerable", "unanswerable"):
+        answerability = answerability == "answerable"
+    elif answerability is not None and type(answerability) is not bool:
+        raise ValueError("development answerability must be boolean, answerable or unanswerable")
     parsed = info["trace"]["parser"]
     if any(parsed.get(name, {}).get("value") != value for name, value in expected.items()
            if name in ("entity", "attribute", "intent", "as_of")):
         stage = "parsing"
     elif "rendering_grounding" in reasons:
         stage = "rendering"
-    elif (rubric or {}).get("answerability") is True and not info["confident"]:
+    elif answerability is True and not info["confident"]:
         stage = "parsing" if "unknown_entity" in reasons else "evidence_or_selection"
-    elif (rubric or {}).get("answerability") is False and info["confident"]:
+    elif answerability is False and info["confident"]:
         stage = "refusal_or_rendering"
     return {"suspected_stage": stage, "refusal_reasons": reasons, "requires_source_review": True}
 

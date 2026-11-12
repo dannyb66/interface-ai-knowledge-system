@@ -311,7 +311,7 @@ Before touching blind evaluation, freeze the candidate commit, source artifacts,
 | Public/dev | At least 0.9690/1.0000; no previously perfect item regresses; zero errors and stale traps. |
 | Existing generated proxy | All existing family gates pass; any score change is explained rather than silently rebaselined. |
 | Source grounding | 100% of committed curated entries verify; independent review confirms subject/condition/date support for new facts. |
-| Conflicts | Existing curated set stays verified and development precision/F1/resolution do not fall below 0.9091. Expanding conflict curation is not a Phase 4 prerequisite. |
+| Conflicts | Existing curated set stays verified and development precision/F1/resolution do not fall below the exact frozen baseline of 10/11 (displayed as 0.9091). Expanding conflict curation is not a Phase 4 prerequisite. |
 | Runtime | Python 3.9/3.11; no network/SDK/query-time build; p95 <50 ms; ingest within assignment limit. |
 | Packaging | Clean public-history/data/credential scan; external-kit fresh clones pass. |
 

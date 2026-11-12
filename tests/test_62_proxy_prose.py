@@ -45,7 +45,10 @@ def test_eligibility_grades_every_applicable_sentence(store_full):
     spec = {"category": "conflict_resolution", "intent": "value", "templates": [{"id": "synthetic", "text": "Who is eligible for {product}?"}]}
     rows = [item for split in ("proxy", "holdout") for item in kind_prose(Ctx(store_full, split, {}), "eligibility", spec, pairs)]
     membership = next(r for r in rows if r["route"][1] == "membership")
-    assert len(membership["must_include"]) == 4
+    complete = " ".join(membership["must_include"])
+    for condition in ("Any", "live or work", "immediate family member", "Rural Ideas Network",
+                      "open a savings account with $25", "keep at least $25", "Iowa, Illinois and Wisconsin"):
+        assert condition in complete
     assert membership["must_not_include"] and all(t not in membership["must_include"] for t in membership["must_not_include"])
     assert len({r["key"] for r in rows}) == len(pairs)
 

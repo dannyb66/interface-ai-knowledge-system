@@ -17,6 +17,10 @@ class Config:
     log_level: str = "WARNING"
     max_question_chars: int = 1000
     llm_ingest: bool = False
+    lexical_routing: bool = False
+    unknown_topic_routing: bool = False
+    routing_min_score: float = 0.6
+    routing_min_margin: float = 0.2
 
     @classmethod
     def from_env(cls, **overrides: Any) -> Config:

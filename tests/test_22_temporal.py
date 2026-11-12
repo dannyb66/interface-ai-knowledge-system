@@ -102,9 +102,10 @@ def test_dated_pools_select_by_publication_up_to_the_asked_date():  # Review Foc
     assert _texts(store, "2021-01-01") is None  # nothing published by then: refused
     assert _texts(store, year=2024) == ["24 branch office locations"]  # a year no fact carries cuts at its last day
     assert resolve(_ask("2024-08-31"), store, R).conflict_note is None  # ruling (c): a dated plan carries no caveat
-    change = resolve(_ask("2024-08-31", intent="change"), store, R)  # the asked date cuts the "from" side only
-    assert [(f.source.snapshot_id, f.value_text) for f in change.facts] == [
-        (C01, "24 branch office locations"), (C05, "22 branch office locations")] and change.conflict_note is None
+    # The dated source supports the single-date answers above, but it is not a
+    # captured observation at a comparison endpoint before the first crawl.
+    change = resolve(_ask("2024-08-31", intent="change"), store, R)
+    assert not change.confident and not change.facts and change.conflict_note is None
 
 def test_year_scoped_facts_filter_by_year_instead_of_cutting():
     store = _store((C05, [_count("1,000 employees", "2024-02-01", year=2023, snapshot_id=C05),

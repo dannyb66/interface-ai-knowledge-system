@@ -40,8 +40,8 @@ def test_change_between_intermediate_crawls(ks_full):
         assert _has(ks_full.answer(q).text, must, must_not), q
 
 def test_change_endpoints_in_one_crawl_or_reversed(ks_full):
-    one = ks_full.answer("How did the 30-year fixed mortgage rate for loans of $100,000 or less change between May 13 and May 18, 2026?").text
-    assert "unchanged at" in one and _has(one, ["5.875"], ["6.25", "7.13"])
+    one = ks_full.answer("How did the 30-year fixed mortgage rate for loans of $100,000 or less change between May 13 and May 18, 2026?")
+    assert not one.confident and not one.sources and "unchanged" not in one.text
     fwd = ks_full.answer("How did the 17-month certificate special APY change between May and September 2026?").text
     rev = ks_full.answer("How did the 17-month certificate special APY change between September and May 2026?").text
     assert fwd == rev
