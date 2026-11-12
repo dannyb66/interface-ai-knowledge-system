@@ -208,7 +208,8 @@ def test_explain_shows_the_work(ks_full):
     assert [c["rank"] for c in info["candidates"]] == list(range(1, len(info["candidates"]) + 1))
     assert info["winner"] == info["candidates"][0] and info["winner"]["value_text"] == "4.10%"
     refused = ks_full.explain("What is your rate on a 7/1 adjustable-rate mortgage?")
-    assert refused["candidates"] == [] and refused["winner"] is None and refused["answer"].startswith("Dupaco's website doesn't list")
+    assert refused["candidates"] == [] and refused["winner"] is None and refused["answer"].startswith("I can't confirm")
+    assert "website" not in refused["answer"]
     bad_date = ks_full.explain(QUESTION, "garbage")  # as_of None alone would hide why it refused
     json.dumps(bad_date)
     assert info["as_of_error"] is False and bad_date["as_of_error"] is True and bad_date["winner"] is None

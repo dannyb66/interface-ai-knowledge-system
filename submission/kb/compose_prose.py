@@ -22,6 +22,7 @@ from ``kb.compose``, which imports these names (``HOURS_NOTE`` is re-exported th
 from __future__ import annotations
 
 import re
+from dataclasses import replace
 from typing import Dict, List, Optional, Sequence, Tuple
 
 from .labels import label, phrase, product_names, sentence, title_words
@@ -30,6 +31,9 @@ from .normalize import normalize_dashes
 from .temporal import CLOSED, status_at
 from .types import AnswerPlan, Fact
 from .prose_verdict import prose_prefix
+from .source_attribution import attribution
+from .prose_presentation import prose_statement
+from .historical_scope import announcement_closure, source_reference
 
 HOURS_NOTE = "Hours vary by branch; tell me which branch and I'll confirm."
 VARY = "No. Hours vary by branch."  # the first line of a "same hours?" question over two or more schedules
@@ -147,7 +151,8 @@ def render_status(plan: AnswerPlan) -> str:
     else ``The {B} branch is scheduled to close on {date}.``, after ``No.`` or ``Yes.`` when ``_verdict`` holds; a
     status fact without an event date keeps the Phase 2 line, ``{label}: {value_text}.``."""
     reference = _reference(plan)
-    verdict = _verdict(plan, sum(1 for f in plan.facts if f.event_date))
+    source_question = source_reference(plan.question) is not None
+    verdict = not source_question and _verdict(plan, sum(1 for f in plan.facts if f.event_date))
     lines = []
     for f in plan.facts:
         if not f.event_date:
@@ -155,6 +160,9 @@ def render_status(plan: AnswerPlan) -> str:
             continue
         closed = status_at(f, reference) == CLOSED
         when = "closed on" if closed else "is scheduled to close on"
+        if source_question:
+            # A planned event in the quoted notice never proves realized status.
+            when = "was scheduled to close on" if announcement_closure(f) else "had a reported closure date of"
         line = sentence("The {} {} {}".format(_branch_words(f), when, f.value_text))
         lines.append(("No. " if closed else "Yes. ") + line if verdict else line)
     return "\n".join(lines)
@@ -167,9 +175,20 @@ def render_alternatives(plan: AnswerPlan) -> str:
 
 
 def render_prose(plan: AnswerPlan) -> str:
-    """One product's verified sentences in their item order, with a yes/no verdict retained."""
+    """One product's verified sentences in item order; typed prose has no inferred verdict."""
+    if plan.requested_prose_attributes:
+        lines = []
+        for attr in plan.requested_prose_attributes:
+            rows = tuple(f for f in plan.facts if f.attribute == attr)
+            part = replace(plan, facts=rows, intent="value", requested_prose_attributes=())
+            text = render_prose(part)
+            if attr == "description":
+                name = product_names().get(rows[0].product_id, rows[0].product_id)
+                text = name + " service information:" + text[len(name) + 1:]
+            lines.append(text)
+        return "\n".join(lines)
     facts = sorted(plan.facts, key=lambda f: (dict(f.qualifiers).get("item", 0), f.source.row_idx, f.value_text))
-    texts = list(dict.fromkeys(sentence(f.value_text) for f in facts))
+    texts = list(dict.fromkeys(sentence((attribution(f) + " " if attribution(f) else "") + prose_statement(f.value_text)) for f in facts))
     suffix = " eligibility" if facts[0].attribute == "eligibility" else ""
     text = "{}{}: {}".format(product_names().get(facts[0].product_id, facts[0].product_id), suffix, " ".join(texts))
     return prose_prefix(plan, product_names().get(facts[0].product_id, facts[0].product_id)) + text

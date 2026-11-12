@@ -88,7 +88,13 @@ def test_required_facts_and_crawl_specific_eligibility(ks_full):
     from kb.temporal import select_dated
     latest = ks_full.store.by_product_attr[SID]
     elig = sorted(latest[("membership", "eligibility")], key=lambda f: dict(f.qualifiers)["item"])
-    assert list(dict.fromkeys(f.value_text for f in elig)) == ["You live or work within our charter area.", "You have an immediate family member who’s a member.", "You belong to the Rural Ideas Network.", "You can find us in Iowa, Illinois and Wisconsin."]
+    text = " ".join(dict.fromkeys(f.value_text for f in elig))
+    assert "If Any of These Sound Like You" in text
+    for condition in ("live or work within our charter area", "immediate family member", "Rural Ideas Network",
+                      "open a savings account with $25 or more", "keep at least $25 in your savings account"):
+        assert condition in text
+    from kb.claim_groups import complete_groups
+    assert all(f.claim_groups for f in elig) and complete_groups(elig)
     assert {f.value_text for f in select_dated(latest[("forbes_recognition", "description")], None)} == {"This was the fifth time Forbes recognized Dupaco."}
     for pid, attr in (("mobile_wallet", "description"), ("student_loans", "description"), ("home_start", "description"), ("shared_branching", "count"), ("home_start", "eligibility"), ("mortgage_rate_relief", "eligibility")):
         assert latest.get((pid, attr)), pid
@@ -128,7 +134,7 @@ def test_ingest_normalizes_shared_conflict_and_prose_pages_once(real_snapshots, 
     for _, markdown, url, _ in texts:
         if url in overlap:
             raw.setdefault(url, markdown)
-    assert len(raw) == 4
+    assert raw and set(raw) == overlap
     calls = {markdown: 0 for markdown in raw.values()}
     original = prose_facts.page_text
     def counted(markdown):

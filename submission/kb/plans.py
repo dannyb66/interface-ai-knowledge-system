@@ -72,7 +72,10 @@ def _sources(store: FactStore, facts: Sequence[Fact], days: Days) -> Tuple[Sourc
         crawl = f.source.snapshot_id
         copies = store.in_force(crawl, f.product_id, f.attribute, days.get(crawl))
         cut = days.get(crawl)
-        for g in [f] + [c for c in copies if c.key == f.key and c.value_text == f.value_text
+        semantic_cut = cut or dict(store.snapshots())[crawl]
+        copies = [c for c in copies if not (c.semantics is not None or c.attribute == "fee")
+                  or not c.effective_date or c.effective_date <= semantic_cut]
+        for g in [f] + [c for c in copies if c.key == f.key and c.value_text == f.value_text and c.rate_bound == f.rate_bound
                         and (not f.published_date or c.published_date and c.published_date <= f.published_date
                              and (not cut or c.published_date <= cut))]:
             if g.source not in out:

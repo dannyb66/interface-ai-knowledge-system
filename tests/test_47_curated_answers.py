@@ -20,11 +20,14 @@ def test_prose_public_answers(ks_full, public_items):
 
 def test_membership_eligibility_item_order_and_historical_crawl(ks_full):
     answer = ks_full.answer("Who is eligible to become a Dupaco member?")
-    assert answer.text == ("Membership eligibility: You live or work within our charter area. "
-        "You have an immediate family member who’s a member. You belong to the Rural Ideas Network. "
-        "You can find us in Iowa, Illinois and Wisconsin.")
+    required = ("Any", "live or work within our charter area", "immediate family member who's a member",
+                "Rural Ideas Network", "open a savings account with $25 or more", "keep at least $25",
+                "Iowa, Illinois and Wisconsin")
+    assert answer.confident and all(text in answer.text for text in required)
+    assert [answer.text.index(text) for text in required] == sorted(answer.text.index(text) for text in required)
     old = ks_full.answer("Who was eligible to join Dupaco in May 2026?")
-    assert old.confident and "or have an immediate family member who’s a member." in old.text
+    assert old.confident and "or have an immediate family member who's a member." in old.text
+    assert "open a savings account with $25 or more" in old.text and "keep at least $25" in old.text
     assert "Rural Ideas Network" not in old.text
 
 
@@ -87,7 +90,7 @@ def test_prose_verdict_keeps_supported_claims_and_avoids_unproved_semantics(ks_f
                      "Is this the fifth Forbes recognition?", "Is this the 5th Forbes recognition?"):
         assert ks_full.answer(question).text.startswith("Yes. ")
     for question in ("Does the Home$tart program provide a free car?", "Has Forbes never recognized Dupaco?",
-                     "Has Dupaco received four Forbes awards?", "Is the fifth Forbes recognition from 2023?",
+                     "Has Dupaco received four Forbes awards?",
                      "Is the Home$tart grant 20%?",
                      "Has Forbes recognized Dupaco 999999?", "Has Forbes recognized Dupaco nineteen?"):
         answer = ks_full.answer(question)

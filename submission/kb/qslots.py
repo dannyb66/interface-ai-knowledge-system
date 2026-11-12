@@ -11,6 +11,8 @@ from typing import Any, Dict, FrozenSet, List, Mapping, Optional, Sequence, Tupl
 
 from . import lexicon as lx
 from .normalize import bare_branch, branch_name, model_year_range, passive_used_to, question_amount, year_back
+from .conditions import query_conditions
+from .prose_questions import information_attribute, information_intent, serving_cutoff
 
 __all__ = ["Hit", "asks_opening", "attribute", "keyword_intent", "seq", "slots", "superlative", "url_cue"]
 
@@ -113,6 +115,8 @@ def keyword_intent(toks: Sequence[str], words: FrozenSet[str], dates: Sequence[s
     still open?"), which is branch context for the status cue alone (Task 13), never for hours, address or count."""
     ctoks = ["" if i in quiet else t for i, t in enumerate(toks)]  # "before it changed" is no change cue
     cue = any(t in lx.CHANGE_WORDS and (i == 0 or ctoks[i - 1] not in lx.MODALS) for i, t in enumerate(ctoks))
+    if "happens" in words and not rated and not words & (lx.CHANGE_WORDS - {"happens"}):
+        cue = False  # present process wording is not a historical change
     if len(set(dates)) > 1 or not seq(ctoks, *lx.CHANGE_BLOCK) and (
             cue or seq(ctoks, *lx.UPDOWN) or (dates and words & lx.COMPARE_WORDS)):
         return "change"
@@ -124,12 +128,22 @@ def keyword_intent(toks: Sequence[str], words: FrozenSet[str], dates: Sequence[s
         return "count"
     if (words & {"update", "updating"} or seq(toks, ("change", "my"))) and words & lx.UPDATE_WHAT:
         return "phone"  # updating the member's own details goes to the contact route (controller ruling, dup-060)
-    if (words & lx.ADDRESS_WORDS and "email" not in words) or "wheres" in words or (
+    address_words = words & lx.ADDRESS_WORDS
+    if "address" in address_words and any(t == "address" and i and (
+            toks[i - 1] == "to" or (set(toks[max(0, i - 4):i]) & {"can", "could", "may", "might", "will", "would"}
+            and not set(toks[max(0, i - 4):i]) & {"give", "show", "tell", "find", "confirm", "provide", "verify"}))
+            for i, t in enumerate(toks)):
+        address_words = address_words - {"address"}  # address a problem is a verb, not a postal location
+    if (address_words and "email" not in words) or "wheres" in words or (
             branch_ctx and seq(toks, ("where", "is"), ("where", "are"))):
         return "address"
     lobby = bool(words & lx.LOBBY_WORDS) or seq(toks, *lx.DRIVE_SEQS)  # beside a phone word it asks the phone
     if words & {"fax", "email"} and not words & lx.REPLY_WORDS:
         return ""
+    lost_device = bool(words & {"lost", "stolen", "losing"}) and bool(words & {"wallet", "device", "phone"})
+    procedure = seq(toks, *lx.HOWTO_SEQS) or seq(toks, ("what", "should", "i", "do"), ("what", "do", "i", "do"))
+    if lost_device and procedure and not words & {"call", "contact", "number", "telephone"}:
+        return "how_to"
     if words & lx.PHONE_WORDS and not words & (lx.HOURS_WORDS | lx.REPLY_WORDS):
         return "phone"
     if (words & lx.HOURS_WORDS or (lobby and not words & lx.PHONE_WORDS) or words & lx.REPLY_WORDS
@@ -190,6 +204,8 @@ def slots(s: str, toks: Sequence[str], words: FrozenSet[str], pid: Optional[str]
           hits: Sequence[Tuple[int, int, Hit]], segment: str, arm: bool, term: Optional[Tuple[int, bool, bool]],
           named_branch: bool) -> Dict[str, Any]:
     slots: Dict[str, Any] = {"segment": segment, "superlative": superlative(toks, hits, published)}
+    if "fee" in published:
+        slots.update(query_conditions(s))
     slots["term_months"] = term[0] if term else None
     slots["amount"] = question_amount(s)
     vehicle_years = [i for i, t in enumerate(toks) if len(t) == 4 and t.isdigit() and 1980 <= int(t) <= 2099 and (
@@ -252,14 +268,21 @@ def attribute(intent: str, attrs: FrozenSet[str], toks: Sequence[str], words: Fr
     if seq(toks, ("how", "long")) and words & lx.INTRO_WORDS:
         return "intro_term"  # how long an intro rate lasts: no fact carries it (W4)
     chosen = requirement or ("url" if "url" in attrs else next((a for a in lx.ATTR_PRIORITY if a in attrs), None))
+    chosen = information_attribute(chosen, attrs, toks, words, published, slots)
     if chosen is None and "eligibility" in published and "who" in words and words & {"join", "qualifies", "apply", "eligible"}:
+        chosen = "eligibility"
+    if chosen is None and "eligibility" in published and (
+            words & {"who", "which"} and words & {"use", "access", "participate"}
+            or words & {"must", "require", "requires", "required", "need"} and words & {"membership", "member"}):
         chosen = "eligibility"
     if chosen is None and published == frozenset({"fee"}) and intent in ("value", "yes_no"):
         chosen = "fee"
     if chosen == "earning_rate" and "apy" in published:
         chosen = "rate"  # a deposit's earning rate is its APY
     opening = bool(words & lx.REQUIRE_VERBS) and seq(toks, ("to", "open"))  # "What is required to open ...?"
-    purpose = any(passive_used_to(toks, i) for i in range(len(toks)))  # "What is the HSA used to pay for?" (SE6)
+    purpose = (any(passive_used_to(toks, i) for i in range(len(toks)))
+               or bool(words & {"purpose", "purposeful", "designed", "intended", "suitable", "goals", "benefits"})
+               or seq(toks, ("how", "does"), ("how", "do"), ("what", "does", "it", "do")))
     if chosen is None:
         if words & {"routing", "aba"}:  # "Has the routing number changed?"
             chosen = "routing_number"

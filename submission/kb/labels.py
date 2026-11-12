@@ -18,6 +18,10 @@ from typing import List, Mapping, Optional, Tuple
 
 from .config import DEFAULT_DATA_DIR
 from .types import Fact
+from .fee_semantics import scope_label
+from .rate_bounds import bounded_value
+from .source_attribution import attribution
+from .prose_presentation import prose_statement
 
 Row = Tuple[Fact, ...]  # one table row: the asked column, then its companion columns (a rate's APR)
 _UNIT_WORDS = {"apy": "APY", "apr": "APR", "rate": "rate", "dividend_rate": "dividend rate", "points": "points",
@@ -109,12 +113,15 @@ def label(fact: Fact, registry_names: Mapping[str, str]) -> str:
         head.append("Special")
     if q.get("branch_name"):
         head.append(title_words(q["branch_name"]))
-    return ", ".join([" ".join(head + [name])] + _tiers(q))
+    scoped = [scope_label(fact)] if scope_label(fact) else []
+    return ", ".join([" ".join(head + [name])] + _tiers(q) + scoped)
 
 
 def _value(f: Fact) -> str:
     """``value_text`` verbatim, then the attribute's unit word unless the text already names one."""
-    unit, text = _UNIT_WORDS.get(f.attribute), f.value_text
+    unit, text = _UNIT_WORDS.get(f.attribute), bounded_value(f)
+    if f.semantics is not None:
+        text = (attribution(f) + " " if attribution(f) else "") + prose_statement(text)
     if unit is None:
         return text
     if not any(ch.isdigit() for ch in text):

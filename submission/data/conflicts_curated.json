@@ -157,7 +157,7 @@
       "topic": "Platinum Visa purchase APR (platinum, visa, credit card)",
       "values": ["13.00%", "12.50%"],
       "resolution": "12.50%",
-      "reason": "The rate sheet (effective 1/1/2026) and the card page's own rate line show 12.50%-19.50% APR; the card page's fine print still gave the standard APR effective 10/1/2025 as 13.00%-20.00% (crawls 01-03).",
+      "reason": "The rate sheet (effective 1/1/2026) and the card page's own rate line show 12.50%-19.50% APR; the card page's fine print still gave the standard APR effective 10/1/2025 as 13.00%-20.00% (crawl 03).",
       "confidence": 0.6,
       "keys": [["platinum_visa", "apr"]],
       "sources": [
@@ -312,6 +312,7 @@
       "reason": "The rate sheet changed between crawls: 2.90% in the May 2026 crawls and 3.40% (effective 06/02/2026) from the June 9, 2026 crawl on.",
       "confidence": 0.4,
       "keys": [["cert_regular", "apy"]],
+      "note_qualifiers": {"term_months": 12},
       "sources": [
         {"url": "https://www.dupaco.com/rates", "snapshot_id": "02_2026-05-19_recrawl", "value": "2.90%", "quote": "| 12 Month | 2.88% | 2.90% | $1,000 |"},
         {"url": "https://www.dupaco.com/rates", "snapshot_id": "05_2026-09-28_latest", "value": "3.40%", "quote": "| 12 Month | 3.37% | 3.40%1 | $1,000.00 |"}

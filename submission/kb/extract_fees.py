@@ -8,6 +8,7 @@ from typing import List
 from .extract_rules import SourceContext
 from .normalize import parse_date, parse_money
 from .types import ClaimType, Fact, make_key
+from .conditions import source_conditions
 
 FEE_PAGE_RE = re.compile(r"^https://www\.dupaco\.com/hubfs/dupaco-credit-union-fee-schedule")
 MONEY = re.compile(r"\$[\d,]+(?:\.\d+)?")
@@ -59,7 +60,8 @@ def extract_fees(markdown: str, ctx: SourceContext, registry, boilerplate) -> Li
         if not resolution or not resolution.product_id or registry.family(resolution.product_id) != "fees":
             continue
         pid = resolution.product_id
-        key = make_key(pid, "fee", resolution.qualifiers)
+        qualifiers = dict(resolution.qualifiers, **source_conditions(label, value))
+        key = make_key(pid, "fee", qualifiers)
         facts.append(Fact(key, pid, "fee", key[2], parse_money(value), value, "usd", ClaimType.ASSERTION,
                           effective, None, None, ctx.source(-3, i, quote), "rules", 1.0))
     return facts

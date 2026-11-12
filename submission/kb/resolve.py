@@ -16,6 +16,15 @@ from .temporal import cutoff, select_dated
 from .tiers import (QUALIFIER_FILTERS, TIER_SELECTORS, Minimums, Selector, branch_named, current, is_number, misses,
                     named_segment, quals, select_tier, slot)
 from .types import AnswerPlan, Fact
+from .diagnostics import RefusalReason as Reason, ResolutionTrace, diagnosed
+from .claim_groups import complete_groups
+from .conditions import CONDITION_VALUES
+from .source_attribution import attribution
+from .compound_prose import resolve_compound
+from .prose_questions import explicit_prose_scope_supported, quantified_prose_supported
+from .historical_scope import historical_scope_supported, historical_numbers
+from .change_window import comparison_window
+from .recognition_scope import recognition_scope_supported
 
 __all__ = ["EARLIEST_NOTE", "PAST", "QUALIFIER_FILTERS", "STRICT_EXTRACTORS", "Selector", "TIER_SELECTORS", "resolve",
            "select_tier"]
@@ -161,33 +170,40 @@ def _with_term(facts: Sequence[Fact], term: object) -> bool:
 
 
 def _current_tiers(q: Query, store: FactStore, snapshot_id: str, product_id: str, as_of: Optional[str],
-                   requested: Optional[str]) -> List[Fact]:
+                   requested: Optional[str], trace=None) -> List[Fact]:
     """Publication governs dated keys; unrelated undated keys retain ordinary current-fact ranking."""
     facts = store.in_force(snapshot_id, product_id, _DERIVED.get(q.attribute or "", q.attribute), as_of)
+    if as_of is None:  # new semantic claims/fees remain bounded by the answering crawl, even without an argument
+        day = dict(store.snapshots())[snapshot_id]
+        facts = [f for f in facts if not (f.semantics is not None or f.attribute == "fee")
+                 or not f.effective_date or f.effective_date <= day]
+    if trace is not None:
+        raw = store.by_product_attr[snapshot_id].get((product_id, _DERIVED.get(q.attribute or "", q.attribute)), [])
+        trace.pool("effective_date", raw, facts, snapshot_id=snapshot_id, product_id=product_id, cutoff=as_of)
     if facts and any(f.published_date for f in facts):
         dated = {f.key for f in facts if f.published_date}
         cut = cutoff(requested, slot(q, "year"), any("year" in quals(f) for f in facts))
-        chosen = select_dated([f for f in facts if f.key in dated], cut)
-        chosen += current([f for f in facts if f.key not in dated])
+        chosen = select_dated([f for f in facts if f.key in dated], cut, trace)
+        chosen += current([f for f in facts if f.key not in dated], trace)
         by_key = {f.key: f for f in chosen}
         return [by_key[key] for key in dict.fromkeys(f.key for f in facts) if key in by_key]
-    return current(facts)
+    return current(facts, trace)
 
 
 def _pools(q: Query, store: FactStore, registry: Registry, snapshot_id: str, as_of: Optional[str],
-           requested: Optional[str]) -> List[Pool]:
+           requested: Optional[str], trace=None) -> List[Pool]:
     """``(product_id, current tiers)`` per product to answer from (``_current_tiers``; ``requested`` is the date a
     dated pool is cut at, ``None`` for none). A term the regular certificate does not list but the special one does
     comes from the special certificate (``17-month CD``); the reverse never happens. The first pool is
     ``q.product_id``'s, the only one the swap replaces."""
     pools = [(pid, _current_tiers(dataclasses.replace(q, attribute=_column(q, registry, pid)), store,
-                                 snapshot_id, pid, as_of, requested)) for pid in _products(q, registry)]
+                                 snapshot_id, pid, as_of, requested, trace)) for pid in _products(q, registry)]
     term, sibling = slot(q, "term_months"), _CERT_SIBLING.get(q.product_id or "")
     if not pools or q.intent == "list" or term is None or sibling is None or slot(q, "special") is False or _with_term(pools[0][1], term):
         return pools
     if q.attribute not in _published(registry, sibling):
         return pools
-    alternative = _current_tiers(q, store, snapshot_id, sibling, as_of, requested)
+    alternative = _current_tiers(q, store, snapshot_id, sibling, as_of, requested, trace)
     if not _with_term(alternative, term):
         return pools
     return [(sibling, alternative)] + [pool for pool in pools[1:] if pool[0] != sibling]
@@ -203,7 +219,8 @@ def _exact(q: Query, pools: Sequence[Pool]) -> List[Fact]:
     """The one current fact whose qualifiers are exactly the asked ones; never for a list, a range or a
     superlative question."""
     asked = {name: value for name, value in q.slots if name in _EXACT_SLOTS}
-    if q.intent == "list" or len(pools) != 1 or not asked or any(slot(q, n) is not None for n in _RANGE_SLOTS):
+    if (q.intent == "list" or len(pools) != 1 or not asked or any(slot(q, n) is not None for n in _RANGE_SLOTS)
+            or any(f.claim_groups or set(dict(f.qualifiers)) & set(CONDITION_VALUES) for _, rows in pools for f in rows)):
         return []
     return [f for f in pools[0][1] if dict(f.qualifiers) == asked][:1]
 
@@ -218,8 +235,8 @@ def _jumbo_minimums(q: Query, store: FactStore, snapshot_id: str, as_of: Optiona
             if quals(f).get("jumbo") and f.value is not None}
 
 
-def _enumerate(q: Query, store: FactStore, snapshot_id: str, as_of: Optional[str], pools: Sequence[Pool]) -> List[Fact]:
-    rows = [f for pool in pools for f in select_tier(pool[1], q, _jumbo_minimums(q, store, snapshot_id, as_of, pool))]
+def _enumerate(q: Query, store: FactStore, snapshot_id: str, as_of: Optional[str], pools: Sequence[Pool], trace=None) -> List[Fact]:
+    rows = [f for pool in pools for f in select_tier(pool[1], q, _jumbo_minimums(q, store, snapshot_id, as_of, pool), trace)]
     if q.families == ("auto", "consumer_loan", "mortgage", "home_equity"):
         return [min([f for f in rows if f.product_id == pid and f.value is not None], key=lambda f: f.value)
                 for pid in dict.fromkeys(f.product_id for f in rows) if any(f.product_id == pid and f.value is not None for f in rows)]
@@ -257,23 +274,24 @@ def _locator(q: Query, store: FactStore, snapshot_id: str, days: Days) -> List[F
 
 def _plan(q: Query, store: FactStore, registry: Registry, facts: Sequence[Fact], snapshot_id: str, note: str,
           days: Days, crawl_days: Sequence[str] = ()) -> AnswerPlan:
-    permitted = set(q.question_numbers) | _date_tokens(q.as_of, crawl_days)
+    if not complete_groups(facts):
+        return _refusal(q, snapshot_id)
+    permitted = set(q.question_numbers) | _date_tokens(q.as_of, crawl_days) | historical_numbers(q.raw_span, facts)
     for f in facts:
         permitted |= number_tokens(f.value_text) | _bounds(f) | _name_numbers(registry, f.product_id)
+        permitted |= number_tokens(attribution(f))
     dated = all(f.published_date or f.event_date for f in facts)  # cut by their own dates: no earliest-crawl caveat
     cited = list(facts) + _locator(q, store, snapshot_id, days)  # an hours plan also cites the /contact locator
     return AnswerPlan(q.intent, tuple(facts), frozenset(permitted), _sources(store, cited, days), True,
                       EARLIEST_NOTE if note == _EARLIEST and not dated else None, snapshot_id, None, q.as_of,
-                      question=q.raw_span, strict_numbers=any(f.extractor in STRICT_EXTRACTORS for f in facts),
+                      question=q.raw_span, strict_numbers=any(f.semantics is not None or f.extractor in STRICT_EXTRACTORS for f in facts),
                       as_of_end=q.as_of_end)
 
 
 def _changed(a: Fact, b: Fact) -> bool:
-    """Whether two crawls' facts of one key differ: by number when both have one (``$100,000`` and ``$100,000.00``
-    are one value), else by text."""
-    if a.value is not None and b.value is not None:
-        return a.value != b.value
-    return a.value_text != b.value_text
+    """Compare complete typed meaning; ordinary numeric rate formatting remains equivalent."""
+    from .claim_semantics import comparison_value
+    return comparison_value(a) != comparison_value(b)
 
 
 def _asked_years(q: Query) -> Optional[Tuple[float, float]]:
@@ -307,7 +325,7 @@ def _relabelled(crawl: Sequence[Fact], row: Fact, asked: Optional[Tuple[float, f
     return best
 
 
-def _past(q: Query, store: FactStore, registry: Registry, reference: str, as_of: Optional[str], note: str) -> AnswerPlan:
+def _past(q: Query, store: FactStore, registry: Registry, reference: str, as_of: Optional[str], note: str, trace=None) -> AnswerPlan:
     """A past-value question (``Query.past``): the rows the plan answers at the reference crawl, each traced back
     through the earlier crawls, newest first, each crawl read as of its own date and skipped when it lacks the row
     (by key, else its ``_relabelled`` tier). The first crawl whose value differs gives the old value: that crawl's
@@ -317,8 +335,8 @@ def _past(q: Query, store: FactStore, registry: Registry, reference: str, as_of:
     the plan's intent is ``past``."""
     taken_on = dict(store.snapshots())
     order = [sid for sid, _ in store.snapshots()]
-    pools = _pools(q, store, registry, reference, as_of, q.as_of)
-    rows = [] if _qualifier_missing(q, pools) else (_exact(q, pools) or _enumerate(q, store, reference, as_of, pools))
+    pools = _pools(q, store, registry, reference, as_of, q.as_of, trace)
+    rows = [] if _qualifier_missing(q, pools) else (_exact(q, pools) or _enumerate(q, store, reference, as_of, pools, trace))
     days: Days = {reference: as_of}
     facts: List[Fact] = []
     dated: List[str] = []  # the crawl date each row prints
@@ -327,7 +345,7 @@ def _past(q: Query, store: FactStore, registry: Registry, reference: str, as_of:
         kept = [(reference, row)]
         for sid in reversed(order[:order.index(reference)]):
             crawl = _current_tiers(dataclasses.replace(q, attribute=row.attribute), store, sid,
-                                   row.product_id, taken_on[sid], taken_on[sid])
+                                   row.product_id, taken_on[sid], taken_on[sid], trace)
             then = next((f for f in crawl if f.key == row.key), None) or _relabelled(crawl, row, asked)
             if then is not None and _changed(then, row):
                 kept = [(sid, then)]
@@ -355,21 +373,18 @@ def _a_year_back(q: Query, store: FactStore) -> Optional[Query]:
     return dataclasses.replace(q, as_of=day) if day >= crawls[0][1] else None
 
 
-def _change(q: Query, store: FactStore, registry: Registry, first: str, as_of: Optional[str], note: str) -> AnswerPlan:
+def _change(q: Query, store: FactStore, registry: Registry, first: str, as_of: Optional[str], note: str, trace=None) -> AnswerPlan:
     """Resolve requested endpoints, or the last adjacent value change for each selected key."""
-    taken_on = dict(store.snapshots())
-    order = list(taken_on)
-    start = first if q.as_of is not None else order[0]
-    end = store.snapshot_for(q.as_of_end)[0] if q.as_of_end else order[-1]
-    days: Days = {start: as_of, end: q.as_of_end}
-    if q.change_point:
-        days = {sid: taken_on[sid] for sid in order}
+    window = comparison_window(q, store)
+    if window is None:
+        return _refusal(q, first)
+    taken_on, order, start, end, days = window
     found = {}
     for sid in days:
         asked = days[sid]
-        requested = asked if q.change_point else q.as_of if sid == start else q.as_of_end
-        pools = _pools(q, store, registry, sid, asked, requested)
-        rows = [] if _qualifier_missing(q, pools) else _enumerate(q, store, sid, asked, pools)
+        requested = asked
+        pools = _pools(q, store, registry, sid, asked, requested, trace)
+        rows = [] if _qualifier_missing(q, pools) else _enumerate(q, store, sid, asked, pools, trace)
         found[sid] = _with_companions(q, store, sid, asked, rows)
     facts = []
     if q.change_point:
@@ -389,7 +404,11 @@ def _change(q: Query, store: FactStore, registry: Registry, first: str, as_of: O
 
 
 def _withdrawn(q: Query, store: FactStore, registry: Registry, sid: str) -> AnswerPlan:
-    """Only a missing current financial value that existed in an earlier crawl is withdrawn."""
+    """Retain a prior financial identity when its current value is unavailable.
+
+    The legacy flag names this state "withdrawn"; missing data does not establish
+    that the product itself was discontinued, so rendering only states uncertainty.
+    """
     refusal = _refusal(q, sid)
     if q.intent not in ("value", "yes_no") or q.attribute not in RATE_ATTRS:
         return refusal
@@ -401,48 +420,70 @@ def _withdrawn(q: Query, store: FactStore, registry: Registry, sid: str) -> Answ
     return refusal
 
 
-def resolve(q: Query, store: FactStore, registry: Registry) -> AnswerPlan:
+def resolve(q: Query, store: FactStore, registry: Registry, trace: Optional[ResolutionTrace] = None) -> AnswerPlan:
     """``_arbitrate``'s plan, refusals included, dated once: ``first_crawl``, the ``taken_on`` of the earliest crawl,
     and ``crawl_date``, that of the plan's ``snapshot_id`` (``None`` without one or before any ingest)."""
-    plan, crawls = _arbitrate(q, store, registry), store.snapshots()
+    plan, crawls = _arbitrate(q, store, registry, trace), store.snapshots()
+    if plan.confident and not (explicit_prose_scope_supported(q, plan.facts, registry)
+                              and quantified_prose_supported(q, plan.facts)
+                              and recognition_scope_supported(q, plan.facts, registry)
+                              and historical_scope_supported(q, plan.facts)):
+        plan = diagnosed(_refusal(q, plan.snapshot_id), trace, Reason.UNAVAILABLE_QUALIFIER, q.product_id)
+    if trace is not None:
+        trace.pool("answer_plan", plan.facts, plan.facts, confident=plan.confident, withdrawn=plan.withdrawn)
     return dataclasses.replace(plan, first_crawl=crawls[0][1] if crawls else None,
                                crawl_date=dict(crawls).get(plan.snapshot_id or ""))
 
 
-def _arbitrate(q: Query, store: FactStore, registry: Registry) -> AnswerPlan:
+def _arbitrate(q: Query, store: FactStore, registry: Registry, trace=None) -> AnswerPlan:
     """The arbitration of the module docstring, top to bottom. ``confident`` is False only for refusal plans."""
+    if q.prose_scope_error:
+        return diagnosed(_refusal(q, None), trace, Reason.AMBIGUOUS, q.product_id)
+    if q.requested_prose_attributes:
+        return resolve_compound(q, registry, lambda part: _arbitrate(part, store, registry, trace), trace)
     if q.mentions:
-        return resolve_mentions(q, lambda part: _arbitrate(part, store, registry))
+        return resolve_mentions(q, lambda part: _arbitrate(part, store, registry, trace))
     q = dataclasses.replace(q, attribute=_column(q, registry, q.product_id)) if q.product_id else q
     q = _asked_attribute(q, registry)  # (1) an unpublished minimum reads as the published one
     if (q.as_of_error or q.product_id is None or q.attribute not in _published(registry, q.product_id)
             or _segment_missing(q, registry)):
-        return _refusal(q, None)  # (2) malformed date, unknown product, unpublished attribute or unoffered segment
+        reason = (Reason.MALFORMED_DATE if q.as_of_error else Reason.UNKNOWN_ENTITY if q.product_id is None else
+                  Reason.UNPUBLISHED_ATTRIBUTE if q.attribute not in _published(registry, q.product_id) else Reason.UNAVAILABLE_SEGMENT)
+        return diagnosed(_refusal(q, None), trace, reason, q.product_id)
     if slot(q, "year_back") and store.snapshots():  # "in the previous year": one year back, if a crawl reaches it
         dated = _a_year_back(q, store)
         if dated is None:
-            return _refusal(q, None)  # (2) a year back precedes the first crawl
+            return diagnosed(_refusal(q, None), trace, Reason.NO_ELIGIBLE_CRAWL, q.product_id)
         q = dated
     try:
         snapshot_id, note = store.snapshot_for(q.as_of)
     except LookupError:  # nothing ingested yet
-        return _refusal(q, None)
+        return diagnosed(_refusal(q, None), trace, Reason.NO_ELIGIBLE_CRAWL, q.product_id)
     as_of = None if note == _EARLIEST else q.as_of  # a pre-crawl date must not drop every dated fact
     name = _named_branch(q)
     if q.attribute == "phone" and name and branch_named(store.in_force(snapshot_id, "branch", "phone", as_of), name):
         q = dataclasses.replace(q, product_id="branch", product_ids=("branch",),
                                 slots=tuple(sorted(dict(q.slots, branch_name=name).items())))
     if _branch_unlisted(q, store, registry, snapshot_id, as_of):
-        return _refusal(q, snapshot_id)  # (2) a contact question naming a branch no page lists
+        return diagnosed(_refusal(q, snapshot_id), trace, Reason.UNLISTED_BRANCH, q.product_id)
     if getattr(q, "past", False):  # the parser's explicit past cue, before change wording; a Query without it: False
-        return _past(q, store, registry, snapshot_id, as_of, note)
+        return diagnosed(_past(q, store, registry, snapshot_id, as_of, note, trace), trace, Reason.NO_ELIGIBLE_FACT, q.product_id)
     if q.intent == "change":
-        return _change(q, store, registry, snapshot_id, as_of, note)
-    pools = _pools(q, store, registry, snapshot_id, as_of, q.as_of)  # a dated pool is cut at the asked date itself
+        return diagnosed(_change(q, store, registry, snapshot_id, as_of, note, trace), trace, Reason.NO_ELIGIBLE_FACT, q.product_id)
+    pools = _pools(q, store, registry, snapshot_id, as_of, q.as_of, trace)
     if _qualifier_missing(q, pools):
-        return _withdrawn(q, store, registry, snapshot_id)
-    rows = _exact(q, pools) or _enumerate(q, store, snapshot_id, as_of, pools)  # (3) exact key, else (4) tiers
+        if trace is not None:
+            trace.pool("qualifier_availability", [f for _, rows in pools for f in rows], (), asked=dict(q.slots))
+        program = dict(q.slots).get("program")
+        reason = Reason.UNAVAILABLE_PROGRAM if program and not any(
+            dict(f.qualifiers).get("program") == program for _, rows in pools for f in rows) else Reason.UNAVAILABLE_QUALIFIER
+        return diagnosed(_withdrawn(q, store, registry, snapshot_id), trace, reason, q.product_id)
+    rows = _exact(q, pools) or _enumerate(q, store, snapshot_id, as_of, pools, trace)
+    if trace is not None:
+        trace.pool("exact_or_tiers", [f for _, values in pools for f in values], rows)
     if not rows:
-        return _withdrawn(q, store, registry, snapshot_id)
+        return diagnosed(_withdrawn(q, store, registry, snapshot_id), trace, Reason.NO_ELIGIBLE_FACT, q.product_id)
     facts = _with_companions(q, store, snapshot_id, as_of, rows)
+    if not complete_groups(facts):
+        return diagnosed(_refusal(q, snapshot_id), trace, Reason.INCOMPLETE_CLAIM_GROUP, q.product_id)
     return _plan(q, store, registry, facts, snapshot_id, note, {snapshot_id: as_of})

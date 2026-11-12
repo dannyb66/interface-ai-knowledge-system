@@ -55,7 +55,7 @@ from word tokens through dict and set lookups that walk the tokens or fixed tupl
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from .query_types import Query
 import re
 from typing import Any, Dict, FrozenSet, List, Optional, Sequence, Tuple
 
@@ -68,38 +68,17 @@ from .qslots import Hit, attribute, keyword_intent, seq, slots
 from .registry import Registry
 from .fee_questions import fee_products as supported_fee_products
 from .mentions import mentions as read_mentions
+from .diagnostics import ResolutionTrace, capture_parse
+from .compound_prose import requested_attributes, unknown_compound_scope
+from .historical_scope import serving_date_text
 
 __all__ = ["INTENTS", "SYNONYMS", "Query", "parse"]  # the vocabulary lives in lexicon.py and is re-exported here
-
-
-@dataclass(frozen=True)
-class Query:
-    """What a question asks (intent, product, attribute, slots) and for which date."""
-
-    intent: str
-    product_id: Optional[str]
-    attribute: Optional[str]
-    slots: Tuple[Tuple[str, Any], ...]  # (name, value) pairs sorted by name
-    as_of: Optional[str]
-    as_of_error: bool
-    raw_span: str  # the cut question, stripped: the only text a refusal may quote
-    question_numbers: FrozenSet[Tuple[str, float]]
-    canonical_key: str
-    product_ids: Tuple[str, ...] = ()  # product_id, then the other products asked in question order; () when none
-    # Explicit past-value wording ("the previous rate", "what it paid before it changed"): the value before the latest
-    # change. Never on a bare "was" and never on a ``change`` question, whose template shows both sides already.
-    past: bool = False
-    as_of_end: Optional[str] = None
-    change_point: bool = False
-    mentions: Tuple[Tuple[Tuple[str, Any], ...], ...] = ()
-    generic_rate: bool = False
-    families: Tuple[str, ...] = ()
 
 
 _Table = Dict[Tuple[str, ...], Hit]
 _TABLES: Dict[int, Tuple[Registry, _Table]] = {}
 _TYPO_WORDS: Dict[int, Dict[str, str]] = {}
-_TYPO_PROTECTED = frozenset(w for value in vars(lx).values() for w in qslots.lexicon_words(value)) | {"apply", "enough", "online"}
+_TYPO_PROTECTED = frozenset(w for value in vars(lx).values() for w in qslots.lexicon_words(value)) | {"apply", "enough", "online", "routine"}
 
 
 def _tokens(text: str) -> Tuple[List[str], List[str], FrozenSet[int], FrozenSet[int]]:
@@ -237,6 +216,8 @@ def _core(products: Sequence[str]) -> List[str]:
     core = [p for p in products if p not in lx.CONTEXT]
     if "mortgage_purchase" in core and set(core) & lx.HOME_LENDING:
         core.remove("mortgage_purchase")
+    if any(p not in lx.DATED_COUNT_PRODUCTS for p in core):
+        core = [p for p in core if p not in lx.DATED_COUNT_PRODUCTS]
     return core
 
 
@@ -269,7 +250,7 @@ def _pick(intent: str, products: Sequence[str], branch_ctx: bool, reply: bool) -
     if intent in ("routing", "phone") or reply:
         return "membership"
     if intent == "count":
-        return "branch_count" if branch_ctx or "branch_count" in products else (list(products) or [None])[0]
+        return "branch_count" if branch_ctx or "branch_count" in products else (_core(products) or list(products) or [None])[0]
     core = _core(products)
     if intent in ("hours", "address", "status"):
         return "branch" if "branch" in products or not core else core[0]
@@ -277,7 +258,7 @@ def _pick(intent: str, products: Sequence[str], branch_ctx: bool, reply: bool) -
 
 
 def parse(question: Any, as_of: Optional[str], registry: Registry, max_chars: int = 1000,
-          reference_date: Optional[str] = None) -> Query:
+          reference_date: Optional[str] = None, trace: Optional[ResolutionTrace] = None) -> Query:
     """Canonicalise ``question`` (anything; cut to ``max_chars`` first) under the ``as_of`` contract above;
     ``reference_date`` (the newest crawl's ``YYYY-MM-DD``) gives a month written without a year its year."""
     text = question[:max(0, max_chars)] if isinstance(question, str) else ""
@@ -287,16 +268,19 @@ def parse(question: Any, as_of: Optional[str], registry: Registry, max_chars: in
     toks = [t if t in _TYPO_PROTECTED else qslots.fix_typo(t, _TYPO_WORDS[id(registry)]) for t in toks]
     words = frozenset(toks)
     numbers = frozenset(number_tokens(text))
-    dates = question_dates(s, reference_date)
+    dates = question_dates(serving_date_text(s), reference_date)
     table = _phrase_table(registry)
     hits = _coordinated(toks, table, _match(toks, table))
+    hits = [hit for hit in hits if not (hit[1:] == (1, ("family", "checking")) and hit[0]
+            and toks[hit[0] - 1] in {"recommend", "suggest", "by", "while", "after", "before", "regularly"}
+            and toks[hit[0] + 1:hit[0] + 2] not in (["account"], ["accounts"]))]
     masked = {i for start, size, (kind, _) in hits if kind == "product" for i in range(start, start + size)}
     attr_words = frozenset(t for i, t in enumerate(toks) if i not in masked)
     attrs = frozenset(target for _, _, (kind, target) in hits if kind == "attribute")
     rate_at = {start for start, _, (kind, target) in hits if kind == "attribute" and target in lx.RATE_ATTRS}
     marked = [start for start, _, (kind, target) in hits if kind == "attribute" and target in lx.RATE_BEATING]
     if marked and rate_at and min(rate_at) < min(marked) and toks[0] in ("what", "whats", "which"):
-        attrs = attrs - frozenset(lx.RATE_BEATING)  # "What is the APY on Share Savings, compounded monthly?" (SE4)
+        attrs = attrs - (frozenset(lx.RATE_BEATING) - {"cash_advance"})  # preserve explicit operation scope
     segment = "business" if words & {"business", "businesses", "commercial"} else "personal"
     products, family = _products(hits, toks, otoks, words, segment)
     families = tuple(dict.fromkeys(target for _, _, (kind, target) in hits if kind == "family")) if products else ()
@@ -318,8 +302,10 @@ def parse(question: Any, as_of: Optional[str], registry: Registry, max_chars: in
     if re.search(r"(?:https?://|[a-z0-9-]+\.(?:com|org|net)\b)", s) and words & {"page", "pages", "website", "site"}:
         keyword = "url"
     fee_products = [p for p in products if registry.family(p) == "fees"]
+    fee_operation_rejected = False
     if fee_products:
         fee_products = supported_fee_products(products, words, registry)
+        fee_operation_rejected = not fee_products
         products = fee_products  # keep direction; an unsupported operation cannot borrow the base amount
     if fee_products and keyword != "url" and words & {"fee", "fees", "cost", "charge", "charges", "price"}:
         products, keyword = fee_products, "value"
@@ -351,10 +337,19 @@ def parse(question: Any, as_of: Optional[str], registry: Registry, max_chars: in
         pid = "contact_page"
     if pid in ("contact_page", "rates_page", "website") and not _core(products):
         keyword = "url"
+    narrative_rejected = bool(words & {"story", "stories"}) and not bool(attrs & lx.RATE_ATTRS) and pid is not None
+    if narrative_rejected:
+        try:
+            narrative_rejected = registry.family(pid) != "information"
+        except KeyError:
+            pass
+    if narrative_rejected:
+        pid = None  # a member narrative cannot borrow the current generic financial-product facts
     try:
         published = registry.published(pid) if pid is not None else frozenset()
     except KeyError:  # a synonym naming a product the registry no longer has
         pid, published = None, frozenset()
+    keyword = qslots.information_intent(keyword, s, published, registry.family(pid) if pid else None, attrs)
     slot_map = qslots.slots(s, toks, words, pid, published, hits, segment, arm, term, "branch" in products)
     if pid in lx.DATED_COUNT_PRODUCTS:
         year = qslots.year_slot(s)
@@ -406,5 +401,20 @@ def parse(question: Any, as_of: Optional[str], registry: Registry, max_chars: in
     point = intent == "change" and not dates and (s.startswith("when") or "last change" in s)
     key = f"{intent}|{named}|{attribute}|{sorted(slots)}|{as_of_value}" + ("|past" if past else "")
     key += ("|" + end if end else "") + ("|when" if point else "")
-    return Query(intent, pid, attribute, slots, as_of_value, as_of_error, text.strip(), numbers, key, ids, past, end, point,
-                 bound, generic_rate, families)
+    query = Query(intent, pid, attribute, slots, as_of_value, as_of_error, text.strip(), numbers, key, ids, past, end, point,
+                  bound, generic_rate, families, bool(attrs or requirement),
+                  any(kind == "product" and target == pid for _, _, (kind, target) in hits),
+                  fee_operation_rejected or narrative_rejected,
+                  serving_as_of=qslots.serving_cutoff(s, as_of_value if as_of is not None else None, reference_date) if intent == "change" else None,
+                  prose_reinterpreted=attribute == "description" and bool(attrs) and any(
+                      qslots.information_attribute(a, attrs, toks, words, published, slot_map) == "description" for a in attrs))
+    requested = requested_attributes(query, attrs)
+    scope_error = unknown_compound_scope(query, registry)
+    if requested or scope_error:
+        from dataclasses import replace
+        query = replace(query, requested_prose_attributes=requested, prose_scope_error=scope_error,
+                        canonical_key=query.canonical_key + "|prose:" + "+".join(requested)
+                        + ("|unknown_scope" if scope_error else ""))
+    if trace is not None:
+        capture_parse(trace, query, hits, attrs, keyword, requirement, toks, as_of)
+    return query

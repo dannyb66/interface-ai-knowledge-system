@@ -91,7 +91,11 @@ def test_rate_sheets_name_no_url(store_full):
         for path in ("/rates", "/business-rates"):
             facts = _page_facts(snapshot, SITE + path)
             assert facts and _urls(facts) == [], (snapshot, path)  # the page has rows, but no url
-    assert {f.source.page_type for f in _url_facts(store_full)} == {"product_page", "contact", "about", "rate_sheet", "legacy_alias"}  # A19: own-page facts
+    urls = _url_facts(store_full)
+    assert {f.source.page_type for f in urls} == {
+        "product_page", "contact", "about", "rate_sheet", "legacy_alias", "newsroom", "pdf", "blog"}
+    assert all(f.value_text == f.source.canonical_url and f.source.quote for f in urls
+               if f.source.page_type in ("newsroom", "pdf", "blog"))  # reviewed information pages cite their own URL
 
 
 def test_the_rate_sheet_widget_on_a_product_page_names_no_url(store_full):

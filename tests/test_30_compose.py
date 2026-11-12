@@ -47,11 +47,13 @@ class _Asked(AnswerPlan):  # AnswerPlan.question (wave A passes q.raw_span), so 
 def _with_question(plan, q): return _Asked(**{**vars(plan), "question": q})  # vars(plan) holds "question" once the field lands
 def _asked(store, q): return _with_question(_plan(store, q), q)
 
-def test_sources_are_each_page_once_and_rate_rows_carry_their_apr(store_full):
+def test_sources_preserve_each_quote_and_rate_rows_carry_their_apr(store_full):
     p = _plan(store_full, "Can you tell me the interest rate for a 30-year mortgage?")
     a = render(p)
     urls = [s.url for s in a.sources]
-    assert urls == list(dict.fromkeys(s.canonical_url for s in p.sources)) and len(urls) > 1  # first seen first
+    triples = [(s.url, s.snapshot_id, s.quote) for s in a.sources]
+    assert triples == list(dict.fromkeys((s.citation_url or s.canonical_url, s.snapshot_id, s.quote) for s in p.sources))
+    assert len(set(urls)) > 1  # first seen first, including distinct evidence from one page
     assert "https://www.dupaco.com/personal/loans/home-loans" in urls  # a copy of the winning row earns the credit
     assert "30-Year Fixed Home Loans - Purchase, $100,000 or less: 7.13% rate (7.27% APR)." in a.text.splitlines()
 
@@ -78,7 +80,7 @@ def test_yes_no_claims_meet_the_rows_own_value_and_comparisons_get_no_verdict(st
     dated = replace(plan, as_of="2026-09-15")
     assert ask("Is the rate above 7%?", dated) == "As of September 2026, " + row and ask("Is the rate 7.27%?", dated) == "No. As of September 2026, " + row
     below = render(_asked(store_full, "Is the auto loan APR below 12%?")).text  # real-store plans with the question attached
-    assert below.splitlines()[0] == "48 Month Auto Loan, 2024-2027 model years: 5.19% APR." and not contains(below, "12%")
+    assert below.splitlines()[0] == "48 Month Auto Loan, 2024-2027 model years: as low as 5.19% APR." and not contains(below, "12%")
     q = "Is the 30-year fixed mortgage rate for loans of $100,000 or less 7.27%?"
     assert render(_asked(store_full, q)).text == "No. 30-Year Fixed Home Loans - Purchase, $100,000 or less: 7.13% rate (7.27% APR)."
     assert render(_asked(store_full, "Is the Share Savings APY 0.20%?")).text.startswith("Yes. ")
@@ -97,7 +99,7 @@ def test_change_renders_two_dated_values_or_unchanged(store_full):
     assert a.text == ("Between May 12, 2026 and September 28, 2026:\n"
                       "30-Year Fixed Home Loans - Purchase, $100,000 or less: it was 5.875% rate (6.010% APR); it is 7.13% rate (7.27% APR).")
     b = _answer(store_full, "Has the 36-month personal loan APR changed since May 2026?")  # dev-010, dated once in the header
-    assert b.text == "Between May 19, 2026 and September 28, 2026:\n36 Month Personal Loan: unchanged at 10.49% APR."
+    assert b.text == "Between May 19, 2026 and September 28, 2026:\n36 Month Personal Loan: unchanged at as low as 10.49% APR."
 
 def test_dates_render_only_when_the_plan_permits_them():
     old = make_fact("personal_loan", "apr", "9.99%", term_months=24)

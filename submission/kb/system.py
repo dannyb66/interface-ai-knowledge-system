@@ -53,6 +53,11 @@ from .prose_facts import ProseBook, load_prose
 from .resolve import resolve
 from .store import FactStore
 from .types import Fact, fact_to_dict
+from .diagnostics import ResolutionTrace, answer_dict
+from .source_pages import SourcePages, source_page, content_digest
+from .lexical_index import LexicalIndex
+from .routing import recover
+from .fee_semantics import reviewed_duplicates
 
 _FALLBACK_SPAN = "that"  # the refusal's span when answering itself failed
 _WARM_UP = "What is the Share Savings APY?"  # any question will do: answering one builds the lazy tables
@@ -91,7 +96,7 @@ def _canonical_pages(texts: Iterable[PageText]) -> Dict[str, str]:
     """Canonical URL to markdown for every page whose raw URL is not shaped like an old copy; the first such page in
     crawl order stands for a canonical URL that several share."""
     out: Dict[str, str] = {}
-    for _, markdown, canonical, shaped in texts:
+    for _, markdown, canonical, shaped in sorted(texts, key=lambda text: (text[2], text[0], content_digest(text[1]))):
         if not shaped:
             out.setdefault(canonical, markdown)
     return out
@@ -148,6 +153,8 @@ class KnowledgeSystem:
         self._conflicts: List[Conflict] = []  # rebuilt at the end of every ingest, only copied by conflicts()
         self._notes: NoteIndex = {}  # (product_id, attribute) -> verified entries, rebuilt with _conflicts
         self._dropped: Set[str] = set()  # topics already reported with KB-E07
+        self._source_quality: Dict[str, dict] = {}
+        self._routing_index = LexicalIndex()
 
     def ingest(self, snapshot: Snapshot) -> None:
         """Add one crawl's facts, finalise the store, empty the answer cache and warm up (see the module docstring)."""
@@ -166,29 +173,38 @@ class KnowledgeSystem:
         pages = list(snapshot.pages or ())
         texts = [_page_text(page) for page in pages]
         canonical_pages = _canonical_pages(text for text in texts if text is not None)
+        records = [source_page(snapshot_id, text[0], text[1], str(getattr(page, "title", "") or ""),
+                               str(getattr(page, "fetched_at", "") or day)) if text is not None else None
+                   for page, text in zip(pages, texts)]
+        sources = SourcePages(record for record in records if record is not None)
+        self._source_quality[snapshot_id] = sources.summary()
         facts: List[Fact] = []
         skipped: List[str] = []
-        for page, text in zip(pages, texts):
+        for page, text, record in sorted(zip(pages, texts, records), key=lambda row: row[2].page_id if row[2] else ""):
             if text is None:
                 skipped.append("a page without a usable url or markdown")
                 continue
+            if sources.ambiguous(record):
+                skipped.append("an ambiguous raw capture " + record.page_id[:16])
+                continue
             fetched_at = getattr(page, "fetched_at", None) or day
             try:
-                facts.extend(self._page_facts(text, fetched_at, snapshot_id, canonical_pages))
+                facts.extend(dataclasses.replace(f, source=dataclasses.replace(f.source,
+                    page_id=record.page_id, content_sha256=record.content_sha256,
+                    citation_url=record.raw_url if sources.collision(record.canonical_url) else None))
+                    for f in self._page_facts(text, fetched_at, snapshot_id, canonical_pages))
             except Exception as exc:  # one unreadable page must not lose the crawl
                 skipped.append("{}: {}".format(text[0][:_LOG_CHARS], type(exc).__name__))
-        prose_pages = {}
-        needed = self._prose_book.pages_needed(snapshot_id) | self._book.pages_needed(snapshot_id)
-        for text in sorted((t for t in texts if t is not None), key=lambda t: (t[3], t[0])):
-            if text[2] in needed:
-                prose_pages.setdefault(text[2], (text[0], text[1]))
         normalized = {}
-        facts.extend(self._prose_book.facts(snapshot_id, prose_pages, normalized))
+        facts.extend(self._prose_book.facts(snapshot_id, sources, normalized))
+        facts = self._prose_book.bind_groups(snapshot_id, reviewed_duplicates(facts))
         try:
             self.store.add(snapshot_id, day, facts)
         finally:
             self.store.finalize()  # never leave the store dirty: in_force() would raise for every question
-        self._check_conflicts(snapshot_id, prose_pages, normalized)
+        self._check_conflicts(snapshot_id, sources, normalized)
+        if self.config.lexical_routing:
+            self._routing_index = LexicalIndex.build(self.store, self.registry)
         self._answers.clear()
         self._warm_up()
         counts = {"pages": len(pages) - len(skipped), "skipped_pages": len(skipped), "facts": len(facts),
@@ -214,14 +230,12 @@ class KnowledgeSystem:
         return (facts + prose_facts(markdown, ctx, self._boilerplate) + page_url_facts(ctx, self.registry)
                 + extract_fees(markdown, ctx, self.registry, self._boilerplate))
 
-    def _check_conflicts(self, snapshot_id: str, source_pages: Dict[str, Tuple[str, str]], normalized: Dict[str, str]) -> None:
+    def _check_conflicts(self, snapshot_id: str, source_pages: SourcePages, normalized: dict) -> None:
         """Verify this crawl's curated conflict sources, rebuild the emitted list and the note index and report each
-        newly dropped entry once (``KB-E07``). A needed URL is read from its page whose raw URL is not legacy-shaped,
-        else from the first legacy-shaped one. A failure here is only logged: curated data never loses a crawl."""
+        newly dropped entry once (``KB-E07``). Quotes verify on retained raw variants; distinct-content aliases
+        cannot lend each other quotes. A failure here is only logged: curated data never loses a crawl."""
         try:
-            needed = self._book.pages_needed(snapshot_id)
-            pages = {url: source_pages[url][1] for url in needed if url in source_pages}
-            self._book.observe(snapshot_id, pages, normalized)
+            self._book.observe(snapshot_id, source_pages, normalized)
             self._conflicts = self._book.emit()
             self._notes = note_index(self._book.verified())
             for topic, why in self._book.dropped(list(self.ingested) + [snapshot_id]):
@@ -241,17 +255,20 @@ class KnowledgeSystem:
         except Exception as exc:  # answer() has its own guard, and ingest() must not fail on a warm-up
             _log_failure(exc, _WARM_UP)
 
-    def _parse(self, question: object, as_of: object) -> Query:
+    def _parse(self, question: object, as_of: object, trace: Optional[ResolutionTrace] = None) -> Query:
         """``parse`` with the question cut to ``max_question_chars`` before any regex; ``KB-E05`` for an empty,
         non-text or over-long question (an over-long one is answered from its cut), ``KB-E04`` for a malformed date."""
         limit = self.config.max_question_chars
         if not isinstance(question, str) or not question.strip() or len(question) > limit:
             warn_once("KB-E05", limit=limit)
         crawls = self.store.snapshots()  # the newest crawl's day gives a month written without a year its year
-        q = parse(question, as_of, self.registry, limit, reference_date=crawls[-1][1] if crawls else None)
+        q = parse(question, as_of, self.registry, limit, reference_date=crawls[-1][1] if crawls else None, trace=trace)
         if q.as_of_error:
             warn_once("KB-E04", value=as_of[:_LOG_CHARS] if isinstance(as_of, str) else as_of)
         return q
+
+    def _route(self, query: Query, trace=None) -> Query:
+        return recover(query, self._routing_index, self.registry, self.config, trace)
 
     def answer(self, question: Optional[str], as_of: Optional[str] = None) -> Answer:
         """The member-facing answer, from the cache when this exact question was answered since the last ingest;
@@ -262,7 +279,7 @@ class KnowledgeSystem:
                 return render_with_dropped(resolve(q, self.store, self.registry))[0]
             cached = self._answers.get(q)
             if cached is None:
-                plan = resolve(q, self.store, self.registry)
+                plan = resolve(self._route(q), self.store, self.registry)
                 cached = self._answers[q] = with_note(render_with_dropped(plan)[0], plan, self._notes)
             return _copy(cached)
         except _EXPECTED as exc:  # a date, store or data failure
@@ -287,11 +304,14 @@ class KnowledgeSystem:
         position as ``rank`` (1 first) and ``winner`` is the first of them, ``None`` for a refusal.
         """
         t0 = time.perf_counter()
-        q = self._parse(question, as_of)
+        trace = ResolutionTrace()
+        q = self._parse(question, as_of, trace)
         t1 = time.perf_counter()
-        plan = resolve(q, self.store, self.registry)
+        plan = resolve(self._route(q, trace), self.store, self.registry, trace)
         t2 = time.perf_counter()
         answer, dropped = render_with_dropped(plan)
+        answer = with_note(answer, plan, self._notes)
+        trace.finish(plan, answer, dropped)
         t3 = time.perf_counter()
         candidates = [{"rank": i, **fact_to_dict(f)} for i, f in enumerate(plan.facts, 1)]
         return {
@@ -304,6 +324,10 @@ class KnowledgeSystem:
             "winner": candidates[0] if candidates else None,
             "answer": answer.text,
             "confident": answer.confident,
+            "sources": answer_dict(answer)["sources"],
+            "conflict_note": answer.conflict_note,
+            "trace": trace.to_dict(),
+            "source_quality": {sid: dict(summary) for sid, summary in sorted(self._source_quality.items())},
             "dropped_sentences": dropped,
             "timings_ms": {"parse": _ms(t0, t1), "resolve": _ms(t1, t2), "render": _ms(t2, t3)},
         }

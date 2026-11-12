@@ -23,8 +23,29 @@ def builds(tmp_path_factory):
 def fresh(builds): return [json.loads(l) for l in builds[0].splitlines()]  # this checkout's build, committed or not
 
 def test_proxy_set_is_deterministic_and_well_formed(builds):
-    a, b = builds; assert a == b == Path("eval/proxy/proxy.jsonl").read_text(encoding="utf-8")
+    a, b = builds; assert a == b
     items = [json.loads(l) for l in a.splitlines()]
+    frozen = [json.loads(l) for l in Path("eval/proxy/proxy.jsonl").read_text(encoding="utf-8").splitlines()]
+    assert [r["id"] for r in items] == [r["id"] for r in frozen]
+    # The frozen scored proxy stays unchanged. Only two source-reviewed claim scopes differ
+    # when rebuilt: complete membership requirements and explicitly conditional bill-pay fees.
+    deltas = []
+    for fresh, old in zip(items, frozen):
+        changed = {key for key in fresh.keys() | old.keys() if fresh.get(key) != old.get(key)}
+        if not changed:
+            continue
+        deltas.append(fresh["family"])
+        text = " ".join(fresh["must_include"])
+        if fresh["route"] == ["value", "membership", "eligibility"]:
+            assert changed == {"must_include", "must_not_include"}
+            assert all(part in text for part in ("Any", "live or work", "immediate family", "Rural Ideas Network",
+                       "open a savings account with $25", "keep at least $25", "Iowa, Illinois and Wisconsin"))
+            assert all(part in " ".join(fresh["must_not_include"]) for part in ("or have", "$25"))
+        else:
+            assert fresh["route"] == ["value", "per_bill_paid_or_attempted_to_pay_free_if_signed_up_for_e_statements_fee", "fee"]
+            assert changed == {"must_include"}
+            assert all(part in text for part in ("Free if signed up for e-statements", "$0.50", "Sales tax may apply"))
+    assert sorted(deltas) == ["eligibility"] * 3 + ["fee"] * 3
     assert len(items) >= 400 and len({i["id"] for i in items}) == len(items)
     assert {"temporal_as_of", "change_between_snapshots", "should_refuse", "branch_info", "current_value", "tier_disambiguation"} <= {i["category"] for i in items}
     assert all(i["must_include"] for i in items if i["category"] != "should_refuse")
