@@ -68,6 +68,7 @@ from .qslots import Hit, attribute, keyword_intent, seq, slots
 from .registry import Registry
 from .fee_questions import fee_products as supported_fee_products
 from .mentions import mentions as read_mentions
+from .diagnostics import ResolutionTrace, capture_parse
 
 __all__ = ["INTENTS", "SYNONYMS", "Query", "parse"]  # the vocabulary lives in lexicon.py and is re-exported here
 
@@ -277,7 +278,7 @@ def _pick(intent: str, products: Sequence[str], branch_ctx: bool, reply: bool) -
 
 
 def parse(question: Any, as_of: Optional[str], registry: Registry, max_chars: int = 1000,
-          reference_date: Optional[str] = None) -> Query:
+          reference_date: Optional[str] = None, trace: Optional[ResolutionTrace] = None) -> Query:
     """Canonicalise ``question`` (anything; cut to ``max_chars`` first) under the ``as_of`` contract above;
     ``reference_date`` (the newest crawl's ``YYYY-MM-DD``) gives a month written without a year its year."""
     text = question[:max(0, max_chars)] if isinstance(question, str) else ""
@@ -406,5 +407,8 @@ def parse(question: Any, as_of: Optional[str], registry: Registry, max_chars: in
     point = intent == "change" and not dates and (s.startswith("when") or "last change" in s)
     key = f"{intent}|{named}|{attribute}|{sorted(slots)}|{as_of_value}" + ("|past" if past else "")
     key += ("|" + end if end else "") + ("|when" if point else "")
-    return Query(intent, pid, attribute, slots, as_of_value, as_of_error, text.strip(), numbers, key, ids, past, end, point,
-                 bound, generic_rate, families)
+    query = Query(intent, pid, attribute, slots, as_of_value, as_of_error, text.strip(), numbers, key, ids, past, end, point,
+                  bound, generic_rate, families)
+    if trace is not None:
+        capture_parse(trace, query, hits, attrs, keyword, requirement, toks, as_of)
+    return query

@@ -8,6 +8,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from enum import Enum
 from typing import Any, FrozenSet, Iterable, List, Mapping, Optional, Sequence, Tuple
+from .claim_semantics import ClaimSemantics, semantics_from_dict, validate_semantics
 
 # (product_id, attribute, qualifiers): the qualifiers are (name, value) pairs sorted by name, ``None`` dropped.
 FactKey = Tuple[str, str, Tuple[Tuple[str, Any], ...]]
@@ -34,6 +35,9 @@ class Source:
     block_idx: int  # position of the quote: block on the page ...
     row_idx: int  # ... and row within that block
     quote: str  # the raw table row or sentence, footnotes and all
+    page_id: Optional[str] = None
+    content_sha256: Optional[str] = None
+    citation_url: Optional[str] = None  # exact raw URL when canonicalization hides distinct content
 
 
 @dataclass(frozen=True)
@@ -54,6 +58,7 @@ class Fact:
     source: Source
     extractor: str
     confidence: float
+    semantics: Optional[ClaimSemantics] = None
 
 
 @dataclass(frozen=True)
@@ -117,7 +122,7 @@ def _pairs_from_lists(pairs: Iterable[Sequence[Any]]) -> Tuple[Tuple[str, Any], 
 
 def fact_to_dict(f: Fact) -> dict:
     """A JSON-ready dict: the enum as its value, tuples as lists, ``source`` as a nested dict."""
-    return {
+    out = {
         "key": [f.key[0], f.key[1], _pairs_to_lists(f.key[2])],
         "product_id": f.product_id,
         "attribute": f.attribute,
@@ -129,10 +134,14 @@ def fact_to_dict(f: Fact) -> dict:
         "effective_date": f.effective_date,
         "event_date": f.event_date,
         "published_date": f.published_date,
-        "source": asdict(f.source),
+        "source": {key: value for key, value in asdict(f.source).items()
+                   if key not in ("page_id", "content_sha256", "citation_url") or value is not None},
         "extractor": f.extractor,
         "confidence": f.confidence,
     }
+    if f.semantics is not None:
+        out["semantics"] = asdict(f.semantics)
+    return out
 
 
 def fact_from_dict(d: dict) -> Fact:
@@ -141,7 +150,7 @@ def fact_from_dict(d: dict) -> Fact:
     The stored ``key`` is restored as written, not recomputed, so any ``Fact`` round-trips exactly.
     """
     key = d["key"]
-    return Fact(
+    fact = Fact(
         key=(key[0], key[1], _pairs_from_lists(key[2])),
         product_id=d["product_id"],
         attribute=d["attribute"],
@@ -156,4 +165,8 @@ def fact_from_dict(d: dict) -> Fact:
         source=Source(**d["source"]),
         extractor=d["extractor"],
         confidence=d["confidence"],
+        semantics=semantics_from_dict(d["semantics"]) if d.get("semantics") is not None else None,
     )
+    if fact.semantics is not None:
+        validate_semantics(fact.semantics, fact.source.quote, fact.value_text, fact.unit, fact.value, fact.attribute)
+    return fact

@@ -33,6 +33,7 @@ from .normalize import canonical_url, number_tokens
 from .plans import join_notes
 from .types import AnswerPlan, CuratedConflict, CuratedSource, Fact
 from .verify import page_text, quote_found, unit_bearing, value_in_quote
+from .source_pages import SourcePages, matching, variants
 
 _FIELDS = ("topic", "values", "sources", "resolution", "reason", "confidence")
 _SOURCE_FIELDS = ("url", "snapshot_id", "value", "quote")
@@ -145,6 +146,7 @@ class ConflictBook:
     def __init__(self, entries: Iterable[CuratedConflict]) -> None:
         self._entries: Tuple[CuratedConflict, ...] = tuple(entries)
         self._checks: Dict[Tuple[int, int], Optional[str]] = {}
+        self._resolved: Dict[Tuple[int, int], CuratedSource] = {}
         needed: Dict[str, Set[str]] = {}
         for entry in self._entries:
             for source in entry.sources:
@@ -161,7 +163,10 @@ class ConflictBook:
         for i, entry in enumerate(self._entries):
             for j, source in enumerate(entry.sources):
                 if source.snapshot_id == snapshot_id:
-                    self._checks[(i, j)] = _check(source, pages, texts)
+                    why, matched = _check_match(source, pages, texts)
+                    self._checks[(i, j)] = why
+                    if matched is not None:
+                        self._resolved[(i, j)] = dataclasses.replace(source, url=matched.raw_url) if isinstance(pages, SourcePages) else source
 
     def _failure(self, i: int) -> Optional[str]:
         """``None`` when every source of entry ``i`` verified, else why the first one did not."""
@@ -176,7 +181,8 @@ class ConflictBook:
     def verified(self) -> List[CuratedConflict]:
         """The entries every source of which verified, confidence first, ties in file order."""
         order = sorted(range(len(self._entries)), key=lambda i: (-self._entries[i].confidence, i))
-        return [self._entries[i] for i in order if self._failure(i) is None]
+        return [dataclasses.replace(self._entries[i], sources=tuple(self._resolved.get((i, j), source)
+                for j, source in enumerate(self._entries[i].sources))) for i in order if self._failure(i) is None]
 
     def emit(self) -> List[Conflict]:
         """Fresh ``contract.Conflict`` objects for the verified entries, in ``verified`` order."""
@@ -196,17 +202,18 @@ class ConflictBook:
 
 def _check(source: CuratedSource, pages: Mapping[str, str], texts: Dict[str, str]) -> Optional[str]:
     """``None`` when the source verifies, else why not; ``texts`` caches each page's ``page_text``."""
+    return _check_match(source, pages, texts)[0]
+
+
+def _check_match(source, pages, texts):
     url = canonical_url(source.url)
-    markdown = pages.get(url)
-    if not isinstance(markdown, str):
-        return "{} is not in crawl {}".format(url, source.snapshot_id)
-    if url not in texts:
-        texts[url] = page_text(markdown)
-    if not quote_found(source.quote, texts[url]):
-        return "the quote for {} is not on {} in crawl {}".format(source.value, url, source.snapshot_id)
+    found = matching(pages, source.url, source.snapshot_id, source.quote, texts, page_text, exact_raw=True)
+    if not found:
+        why = "page missing" if not variants(pages, url, source.snapshot_id) else "quote/source identity missing or ambiguous"
+        return "{} on {} in crawl {}".format(why, url, source.snapshot_id), None
     if not value_in_quote(source.value, source.quote):
-        return "the value {} is not inside its quote on {} in crawl {}".format(source.value, url, source.snapshot_id)
-    return None
+        return "the value {} is not inside its quote on {} in crawl {}".format(source.value, url, source.snapshot_id), None
+    return None, found[0]
 
 
 def note_index(entries: Iterable[CuratedConflict]) -> NoteIndex:

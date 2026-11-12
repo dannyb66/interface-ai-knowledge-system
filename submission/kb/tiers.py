@@ -107,14 +107,18 @@ def _overlaps(a: Fact, b: Fact) -> bool:
     return True
 
 
-def current(facts: Sequence[Fact]) -> List[Fact]:
+def current(facts: Sequence[Fact], trace=None) -> List[Fact]:
     """The current tiers of one product/attribute from ``FactStore.in_force`` output (best rank first): table rows
     when any exist, the top authority class, the first fact of each key, then no older-table tier overlapping a
     kept newer one (rank puts newer effective dates first within an authority class)."""
     pool = [f for f in facts if f.confidence >= TABLE_CONFIDENCE] or list(facts)
+    if trace is not None:
+        trace.pool("source_quality", facts, pool, rule="prefer table confidence when present")
     if not pool:
         return []
     top = max(f.source.authority for f in pool)
+    if trace is not None:
+        trace.pool("authority", pool, [f for f in pool if f.source.authority == top], authority=top)
     kept: List[Fact] = []
     seen: Set[Any] = set()
     for f in pool:
@@ -123,6 +127,9 @@ def current(facts: Sequence[Fact]) -> List[Fact]:
         seen.add(f.key)
         if not any(k.effective_date != f.effective_date and _overlaps(k, f) for k in kept):
             kept.append(f)
+    if trace is not None:
+        trace.pool("current_keys", [f for f in pool if f.source.authority == top], kept,
+                   rule="one ranked fact per key; discard older overlapping tiers")
     return kept
 
 
@@ -341,16 +348,23 @@ _FILTER_ORDER = ("program", "branch_name", "day", "jumbo", "special", "intro", "
 _HARD_TIERS = ("term", "model_year", "balance", "loan_amount")  # an asked tier of these kinds can refuse
 
 
-def select_tier(facts: List[Fact], q: Query, minimums: Optional[Minimums] = None) -> List[Fact]:
+def select_tier(facts: List[Fact], q: Query, minimums: Optional[Minimums] = None, trace=None) -> List[Fact]:
     """The decision table over one product's current tiers: the qualifier filters, each tier kind through
     ``TIER_SELECTORS``, the soft jumbo preference (``minimums``: each jumbo row's minimum to earn, by qualifiers),
     tier order (a list's asked special kind first), then ``highest``/``lowest``."""
     out = list(facts)
     for name in _FILTER_ORDER:
-        out = QUALIFIER_FILTERS[name](out, q)
+        before, out = out, QUALIFIER_FILTERS[name](out, q)
+        if trace is not None:
+            trace.pool("qualifier:" + name, before, out, asked=slot(q, name))
     for kind in _TIER_ORDER:
-        out = TIER_SELECTORS[kind](out, q)
-    return _superlative(_special_first(sorted(_prefer(out, q, minimums or {}), key=_tier_key), q), q)
+        before, out = out, TIER_SELECTORS[kind](out, q)
+        if trace is not None:
+            trace.pool("tier:" + kind, before, out)
+    chosen = _superlative(_special_first(sorted(_prefer(out, q, minimums or {}), key=_tier_key), q), q)
+    if trace is not None:
+        trace.pool("preference_and_order", out, chosen)
+    return chosen
 
 
 def misses(q: Query, facts: Sequence[Fact]) -> bool:

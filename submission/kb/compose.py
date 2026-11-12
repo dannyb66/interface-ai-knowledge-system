@@ -15,6 +15,7 @@ from .normalize import number_tokens, question_amount
 from .resolve import PAST
 from .types import AnswerPlan, Fact, FactKey
 from .compose_prose import render_prose
+from .claim_semantics import compatible_question, semantics_survive
 
 # Straight apostrophes only: harness/scoring.py REFUSAL_RE matches "can't", not a curly quote.
 REFUSAL_TEMPLATE = "Dupaco's website doesn't list {span}, so I can't confirm it. Please contact Dupaco."
@@ -308,9 +309,10 @@ def _cited(plan: AnswerPlan) -> List[AnswerSource]:
     seen: Set[str] = set()
     out = []
     for s in plan.sources:
-        if s.canonical_url not in seen:
-            seen.add(s.canonical_url)
-            out.append(AnswerSource(url=s.canonical_url, snapshot_id=s.snapshot_id, quote=s.quote))
+        url = s.citation_url or s.canonical_url
+        if url not in seen:
+            seen.add(url)
+            out.append(AnswerSource(url=url, snapshot_id=s.snapshot_id, quote=s.quote))
     return out
 
 
@@ -327,8 +329,10 @@ def render_with_dropped(plan: AnswerPlan) -> Tuple[Answer, List[str]]:
                           sources=[], confident=False, conflict_note=plan.conflict_note), []
         return refusal(plan.refusal_span or _FALLBACK_SPAN), []
     template = _by_attribute(plan) or RENDERERS.get(plan.intent, render_value)
+    if template is render_yes_no and any(f.semantics is not None for f in plan.facts):
+        template = render_value  # typed prose is not a numeric-only equality or personal eligibility verdict
     text, dropped = lint(strip_residue(template(plan)), plan.permitted_values, strict=plan.strict_numbers)
-    if not grounded(text, plan.facts):
+    if not grounded(text, plan.facts) or not semantics_survive(text, plan.facts) or not compatible_question(plan):
         return refusal(plan.refusal_span or _FALLBACK_SPAN), dropped
     caveat = "\n" + plan.conflict_note if plan.conflict_note and _before_first_crawl(plan) else ""
     return Answer(text=_with_as_of(text, plan) + caveat, sources=_cited(plan), confident=True,

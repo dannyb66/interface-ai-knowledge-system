@@ -100,7 +100,7 @@ def _dated_rank(f: Fact) -> Tuple:
             s.row_idx)
 
 
-def select_dated(facts: Sequence[Fact], cutoff: Optional[str]) -> List[Fact]:
+def select_dated(facts: Sequence[Fact], cutoff: Optional[str], trace=None) -> List[Fact]:
     """The facts in force at ``cutoff`` (an ISO date; ``None``: no cut) from a pool whose facts all carry a
     ``published_date``: those published after it are dropped (an undated one too, when there is a cut), then each
     fact key keeps its newest publication (``_dated_rank`` breaks ties), whatever the page's authority. The kept
@@ -112,7 +112,12 @@ def select_dated(facts: Sequence[Fact], cutoff: Optional[str]) -> List[Fact]:
         held = best.get(f.key)
         if held is None or _dated_rank(f) < _dated_rank(held):
             best[f.key] = f  # a dict keeps a key where it was first inserted
-    return list(best.values())
+    chosen = list(best.values())
+    if trace is not None:
+        eligible = [f for f in facts if cutoff is None or f.published_date is not None and f.published_date <= cutoff]
+        trace.pool("publication_date", facts, eligible, cutoff=cutoff)
+        trace.pool("publication_recency", eligible, chosen, rule="newest publication per key before authority")
+    return chosen
 
 
 def status_at(f: Fact, reference: str) -> str:
